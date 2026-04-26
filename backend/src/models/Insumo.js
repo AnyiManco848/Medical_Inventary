@@ -7,27 +7,52 @@ const Insumo = sequelize.define('Insumo', {
     primaryKey: true,
     autoIncrement: true,
   },
+  // Nuevo: código único por unidad física (INS-FAM-###)
+  codigo: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+  },
   nombre: {
     type: DataTypes.STRING(100),
     allowNull: false,
   },
-  cantidad_disponible: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 0,
+  // Nuevo: familia del insumo (Collarín cervical, Venda, etc.)
+  familia: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+  },
+  // Nuevo: abreviatura de 3-5 letras usada en el código (COL, VEN, OXI…)
+  familia_abrev: {
+    type: DataTypes.STRING(5),
+    allowNull: true,
+  },
+  // Nuevo: especificaciones de la unidad (talla S, 4", etc.)
+  especificaciones: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
   },
   estado: {
     type: DataTypes.STRING(20),
     allowNull: false,
     defaultValue: 'activo',
     validate: {
-      isIn: [['activo', 'en_mal_estado', 'dado_de_baja', 'prestado']],
+      isIn: [['activo', 'dado_de_baja']],
     },
+  },
+  // Nuevo: ambulancia asignada a este insumo
+  ambulanciaId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  // Campos legacy mantenidos por compatibilidad con datos existentes
+  cantidad_disponible: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1,
   },
   codigo_qr: {
     type: DataTypes.STRING(255),
-    allowNull: false,
-    unique: true,
+    allowNull: true,
   },
   imagen_ruta: {
     type: DataTypes.STRING(500),
@@ -35,8 +60,7 @@ const Insumo = sequelize.define('Insumo', {
   },
   fecha_registro: {
     type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW,
+    allowNull: true,
   },
   observaciones: {
     type: DataTypes.STRING(500),
@@ -44,7 +68,7 @@ const Insumo = sequelize.define('Insumo', {
   },
 }, {
   tableName: 'Insumos',
-  timestamps: true,
+  timestamps: true, // createdAt = fecha_creacion, updatedAt = fecha_modificacion
 });
 
 module.exports = Insumo;
