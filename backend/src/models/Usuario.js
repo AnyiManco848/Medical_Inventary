@@ -32,16 +32,6 @@ const Usuario = sequelize.define('Usuario', {
       },
     },
   },
-  // email: ahora opcional, conservado para datos históricos
-  email: {
-    type: DataTypes.STRING(150),
-    allowNull: true,
-    validate: {
-      isEmail: {
-        msg: 'El email debe tener un formato válido',
-      },
-    },
-  },
   // Siempre almacenar hash bcrypt, nunca la contraseña en texto plano
   password: {
     type: DataTypes.STRING(255),

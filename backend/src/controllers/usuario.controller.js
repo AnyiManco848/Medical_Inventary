@@ -29,9 +29,8 @@ const listar = async (req, res, next) => {
 // POST /api/usuarios — crear usuario con password hasheada
 const crear = async (req, res, next) => {
   try {
-    const { nombre, cedula, numero_ambulancia, email, password, roleId } = req.body;
+    const { nombre, cedula, numero_ambulancia, password, roleId } = req.body;
 
-    // cedula, numero_ambulancia y password son requeridos; email es opcional
     if (!nombre || !cedula || !numero_ambulancia || !password || !roleId) {
       return res.status(400).json({
         message: 'Nombre, cédula, número de ambulancia, password y roleId son requeridos',
@@ -75,8 +74,6 @@ const crear = async (req, res, next) => {
       nombre,
       cedula: cedula.trim(),
       numero_ambulancia: numero_ambulancia.trim(),
-      // email opcional: solo almacenar si se proporciona
-      email: email ? email.toLowerCase().trim() : null,
       password: passwordHash,
       roleId,
       activo: true,
@@ -90,11 +87,11 @@ const crear = async (req, res, next) => {
   }
 };
 
-// PUT /api/usuarios/:id — editar usuario (nombre, cedula, numero_ambulancia, email, roleId, activo, ambulanciaId, password opcional)
+// PUT /api/usuarios/:id — editar usuario (nombre, cedula, numero_ambulancia, roleId, activo, ambulanciaId, password opcional)
 const editar = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { nombre, cedula, numero_ambulancia, email, roleId, activo, password, ambulanciaId } = req.body;
+    const { nombre, cedula, numero_ambulancia, roleId, activo, password, ambulanciaId } = req.body;
 
     const usuario = await Usuario.findByPk(id, {
       include: [{ model: Role, as: 'rol' }],
@@ -126,11 +123,6 @@ const editar = async (req, res, next) => {
         return res.status(400).json({ message: 'El número de ambulancia no puede estar vacío' });
       }
       usuario.numero_ambulancia = numero_ambulancia.trim();
-    }
-
-    // email sigue siendo editable pero es opcional
-    if (email !== undefined) {
-      usuario.email = email ? email.toLowerCase().trim() : null;
     }
 
     if (roleId !== undefined) {
