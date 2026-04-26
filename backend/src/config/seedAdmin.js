@@ -56,7 +56,6 @@ async function seedAdmin() {
       nombre: 'Anyi',
       cedula: CEDULA,
       numero_ambulancia: '01',
-      email: `${CEDULA}@medical.local`,
       password: passwordHash,
       roleId: rolAdmin.id,
       activo: true,
