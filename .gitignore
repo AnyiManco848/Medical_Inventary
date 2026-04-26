@@ -1,0 +1,21 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (contiene contraseñas y datos sensibles)
+.env
+.env.example
+
+# Carpeta de uploads (archivos subidos por usuarios)
+backend/src/uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
