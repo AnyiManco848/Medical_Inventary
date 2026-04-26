@@ -1,16 +1,15 @@
 # Dependencias
 node_modules/
 
-# Variables de entorno (contiene contraseñas y datos sensibles)
+# Variables de entorno
 .env
-.env.example
 
-# Carpeta de uploads (archivos subidos por usuarios)
+# Carpeta de uploads
 backend/src/uploads/
+backend/uploads/
 
-# Logs
-*.log
-npm-debug.log*
+# Next.js (build y caché del frontend)
+frontend/.next/
 
 # Sistema operativo
 .DS_Store
@@ -19,3 +18,7 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# Logs
+*.log
+npm-debug.log*
