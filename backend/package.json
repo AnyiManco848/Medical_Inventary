@@ -8,12 +8,12 @@
     "db:init": "node src/config/initDB.js",
     "db:seed-admin": "node src/config/seedAdmin.js",
     "db:seed-insumos": "node src/config/seedInsumos.js",
+    "db:seed-ambulancias": "node src/config/seedAmbuluncias.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
@@ -27,5 +27,6 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
-  }
+  },
+  "description": ""
 }

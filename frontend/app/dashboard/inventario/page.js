@@ -526,9 +526,12 @@ function ModalHistorial({ insumo, token, onClose }) {
       .finally(() => setCargando(false));
   }, [insumo.id, token]);
 
-  const fmtFecha = (f) => new Date(f).toLocaleString('es-CO', {
-    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
+  const fmtFecha = (f) => {
+    if (!f) return '—';
+    const d = new Date(f);
+    if (isNaN(d.getTime())) return '—';
+    return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+  };
 
   return (
     <Modal onClose={onClose} width="700px">
