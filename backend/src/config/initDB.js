@@ -76,18 +76,6 @@ async function sincronizarTablas() {
   await agregarColumna(sequelize, 'Usuarios', 'cedula', 'NVARCHAR(15) NULL');
   await agregarColumna(sequelize, 'Usuarios', 'numero_ambulancia', 'NVARCHAR(50) NULL');
 
-  // Eliminar índice único de email si existe (ya no es el identificador principal)
-  const [idxEmail] = await sequelize.query(
-    `SELECT i.name FROM sys.indexes i
-     JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-     JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-     WHERE i.object_id = OBJECT_ID('Usuarios') AND c.name = 'email' AND i.is_unique = 1`
-  );
-  if (idxEmail.length > 0) {
-    await sequelize.query(`DROP INDEX [${idxEmail[0].name}] ON [Usuarios]`);
-    console.log('[DB] Índice único de email eliminado.');
-  }
-
   // Índice único en cedula (filtrado: solo filas no-NULL)
   const [idxCedula] = await sequelize.query(
     `SELECT i.name FROM sys.indexes i
@@ -195,7 +183,6 @@ async function sincronizarTablas() {
       nombre: 'Administrador',
       cedula: '0000000001',
       numero_ambulancia: 'ADMIN-CENTRAL',
-      email: 'admin@medical.com',
       password: passwordHash,
       roleId: 1,
       activo: true,
