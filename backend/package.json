@@ -9,6 +9,7 @@
     "db:seed-admin": "node src/config/seedAdmin.js",
     "db:seed-insumos": "node src/config/seedInsumos.js",
     "db:seed-ambulancias": "node src/config/seedAmbuluncias.js",
+    "db:seed-stock": "node src/config/seedStock.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
