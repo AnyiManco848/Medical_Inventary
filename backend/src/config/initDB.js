@@ -149,9 +149,10 @@ async function sincronizarTablas() {
     console.log('[DB] Contador de códigos inicializado.');
   }
 
-  // ── Seed: 10 ambulancias AMB-01 a AMB-10 ──────────────────────────────────
+  // ── Seed: ambulancias AMB-01 a AMB-20 ────────────────────────────────────
+  // Se amplió de 10 a 20 para cubrir la flota completa del sistema
   console.log('[DB] Verificando ambulancias...');
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= 20; i++) {
     const codigo = `AMB-${String(i).padStart(2, '0')}`;
     const ya = await Ambulancia.findOne({ where: { codigo } });
     if (!ya) {
@@ -203,6 +204,28 @@ async function sincronizarTablas() {
       activo: true,
     });
     console.log('[DB] Usuario prueba creado — Cédula: 1234567890 / Pass: Test1234!');
+  }
+
+  // ── Seed: usuarios para ambulancias 2–20 (sin 17 y 19) ───────────────────
+  // Usuario de login: "AmbulanciaX" (campo numero_ambulancia)
+  // Contraseña: "AmbulanciaX" donde X es el número de la ambulancia
+  const numeros = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20];
+  console.log('[DB] Verificando usuarios de ambulancias 2-20...');
+  for (const num of numeros) {
+    const nombreUsuario = `Ambulancia${num}`;
+    const yaExiste = await Usuario.findOne({ where: { numero_ambulancia: nombreUsuario } });
+    if (!yaExiste) {
+      const passwordHash = await bcrypt.hash(nombreUsuario, 12);
+      await Usuario.create({
+        nombre: `Ambulancia ${num}`,
+        cedula: String(num).padStart(10, '0'),
+        numero_ambulancia: nombreUsuario,
+        password: passwordHash,
+        roleId: 2,
+        activo: true,
+      });
+      console.log(`[DB]   ✓ Usuario: ${nombreUsuario} / Pass: ${nombreUsuario}`);
+    }
   }
 
   await sequelize.close();

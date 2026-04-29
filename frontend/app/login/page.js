@@ -136,29 +136,22 @@ const EcgIcon = () => (
 
 /* ── Página principal ────────────────────────────────────────────── */
 export default function LoginPage() {
-  const router              = useRouter();
-  const [cedula,            setCedula]           = useState('');
-  const [password,          setPassword]         = useState('');
-  const [numeroAmbulancia,  setNumeroAmbulancia] = useState('');
-  const [error,             setError]            = useState('');
-  const [cargando,          setCargando]         = useState(false);
+  const router             = useRouter();
+  const [usuario,          setUsuario]       = useState('');
+  const [password,         setPassword]      = useState('');
+  const [showPassword,     setShowPassword]  = useState(false);
+  const [error,            setError]         = useState('');
+  const [cargando,         setCargando]      = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Validación de cédula en el cliente: solo dígitos, 6-15 caracteres
-    if (!/^[0-9]{6,15}$/.test(cedula.trim())) {
-      setError('La cédula debe contener solo dígitos y tener entre 6 y 15 caracteres.');
-      return;
-    }
-
     setCargando(true);
     try {
       const { data } = await axios.post('http://localhost:4000/api/auth/login', {
-        cedula:            cedula.trim(),
+        usuario:  usuario.trim(),
         password,
-        numero_ambulancia: numeroAmbulancia.trim(),
       });
       Cookies.set('token',   data.token,                   { expires: 1 / 3, sameSite: 'strict' });
       Cookies.set('usuario', JSON.stringify(data.usuario), { expires: 1 / 3, sameSite: 'strict' });
@@ -288,56 +281,70 @@ export default function LoginPage() {
             )}
 
             <form onSubmit={handleLogin}>
-              {/* Cédula */}
+              {/* Usuario */}
               <div style={{ marginBottom: '1rem' }}>
-                <label style={labelStyle}>Número de cédula</label>
+                <label style={labelStyle}>Usuario</label>
                 <input
                   type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={cedula}
-                  onChange={(e) => {
-                    // Permitir solo dígitos en el campo
-                    const val = e.target.value.replace(/\D/g, '');
-                    setCedula(val);
-                  }}
+                  value={usuario}
+                  onChange={(e) => setUsuario(e.target.value)}
                   required
-                  maxLength={15}
-                  placeholder="Número de cédula"
+                  placeholder="Ej: Ambulancia2"
                   onFocus={onFocus}
                   onBlur={onBlur}
                   style={inputStyle}
                 />
               </div>
 
-              {/* Contraseña */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={labelStyle}>Contraseña</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="••••••••"
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  style={inputStyle}
-                />
-              </div>
-
-              {/* Número de ambulancia */}
+              {/* Contraseña con opción de mostrar/ocultar */}
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={labelStyle}>Número de ambulancia asignada</label>
-                <input
-                  type="text"
-                  value={numeroAmbulancia}
-                  onChange={(e) => setNumeroAmbulancia(e.target.value)}
-                  required
-                  placeholder="Número de ambulancia asignada"
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  style={inputStyle}
-                />
+                <label style={labelStyle}>Contraseña</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="••••••••"
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    style={{ ...inputStyle, paddingRight: '2.5rem' }}
+                  />
+                  {/* Botón para mostrar u ocultar la contraseña */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    style={{
+                      position:        'absolute',
+                      right:           '0.65rem',
+                      top:             '50%',
+                      transform:       'translateY(-50%)',
+                      background:      'none',
+                      border:          'none',
+                      cursor:          'pointer',
+                      padding:         '0',
+                      color:           C.textLight,
+                      display:         'flex',
+                      alignItems:      'center',
+                    }}
+                  >
+                    {showPassword ? (
+                      /* Ojo tachado — contraseña visible */
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      /* Ojo abierto — contraseña oculta */
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Botón */}
