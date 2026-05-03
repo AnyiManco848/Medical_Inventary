@@ -311,7 +311,7 @@ const reasignar = async (req, res, next) => {
       tipo,
       notas: notas?.trim() || null,
       fecha_devolucion_esperada: fecha_devolucion_esperada || null,
-      usuario_responsable: req.usuario?.cedula || String(req.usuario?.id || ''),
+      usuario_responsable: req.usuario?.numero_ambulancia || String(req.usuario?.id || ''),
     });
 
     insumo.ambulanciaId = ambulancia_nueva_id ? parseInt(ambulancia_nueva_id, 10) : null;
