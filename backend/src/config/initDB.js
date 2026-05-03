@@ -43,7 +43,6 @@ async function crearBaseDeDatos() {
   await seqMaster.close();
 }
 
-// Helper: agrega columna a una tabla si no existe
 async function agregarColumna(sequelize, tabla, columna, definicion) {
   const [rows] = await sequelize.query(
     `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
@@ -65,7 +64,6 @@ async function sincronizarTablas() {
   await sequelize.authenticate();
   console.log('[DB] Conexión exitosa.');
 
-  // Sincroniza: crea tablas nuevas, no altera las existentes
   console.log('[DB] Sincronizando tablas...');
   await sequelize.sync({ force: false });
   console.log('[DB] Tablas sincronizadas.');
@@ -73,21 +71,42 @@ async function sincronizarTablas() {
   // ── Migraciones: tabla Usuarios ───────────────────────────────────────────
   await agregarColumna(sequelize, 'Usuarios', 'ambulanciaId',
     'INT NULL REFERENCES [Ambulancias]([id])');
-  await agregarColumna(sequelize, 'Usuarios', 'cedula', 'NVARCHAR(15) NULL');
   await agregarColumna(sequelize, 'Usuarios', 'numero_ambulancia', 'NVARCHAR(50) NULL');
 
-  // Índice único en cedula (filtrado: solo filas no-NULL)
+  // Eliminar índice único en cedula si existe (columna reemplazada por numero_ambulancia)
   const [idxCedula] = await sequelize.query(
     `SELECT i.name FROM sys.indexes i
      JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
      JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
      WHERE i.object_id = OBJECT_ID('Usuarios') AND c.name = 'cedula' AND i.is_unique = 1`
   );
-  if (idxCedula.length === 0) {
+  for (const idx of idxCedula) {
+    await sequelize.query(`DROP INDEX [${idx.name}] ON [Usuarios]`);
+    console.log(`[DB] Índice ${idx.name} (cedula) eliminado.`);
+  }
+
+  // Eliminar columna cedula si existe
+  const [colCedula] = await sequelize.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_NAME = 'Usuarios' AND COLUMN_NAME = 'cedula'`
+  );
+  if (colCedula.length > 0) {
+    await sequelize.query(`ALTER TABLE [Usuarios] DROP COLUMN [cedula]`);
+    console.log('[DB] Columna cedula eliminada.');
+  }
+
+  // Crear índice único en numero_ambulancia si no existe
+  const [idxNumAmb] = await sequelize.query(
+    `SELECT i.name FROM sys.indexes i
+     JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+     JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+     WHERE i.object_id = OBJECT_ID('Usuarios') AND c.name = 'numero_ambulancia' AND i.is_unique = 1`
+  );
+  if (idxNumAmb.length === 0) {
     await sequelize.query(
-      `CREATE UNIQUE INDEX [Usuarios_cedula] ON [Usuarios]([cedula]) WHERE [cedula] IS NOT NULL`
+      `CREATE UNIQUE INDEX [Usuarios_numero_ambulancia] ON [Usuarios]([numero_ambulancia]) WHERE [numero_ambulancia] IS NOT NULL`
     );
-    console.log('[DB] Índice único en cedula creado.');
+    console.log('[DB] Índice único en numero_ambulancia creado.');
   }
 
   // ── Migraciones: tabla Insumos ─────────────────────────────────────────────
@@ -98,7 +117,6 @@ async function sincronizarTablas() {
     { name: 'imagen_ruta',         sql: '[imagen_ruta] VARCHAR(500) NULL' },
     { name: 'fecha_registro',      sql: '[fecha_registro] DATETIME NULL' },
     { name: 'observaciones',       sql: '[observaciones] VARCHAR(500) NULL' },
-    // Nuevas columnas v2
     { name: 'codigo',              sql: '[codigo] VARCHAR(20) NULL' },
     { name: 'familia',             sql: '[familia] VARCHAR(50) NULL' },
     { name: 'familia_abrev',       sql: '[familia_abrev] VARCHAR(5) NULL' },
@@ -131,7 +149,7 @@ async function sincronizarTablas() {
     console.log('[DB] Índice único en codigo_qr creado.');
   }
 
-  // Índice único en codigo (nuevo formato INS-FAM-###)
+  // Índice único en codigo
   const [idxCodigo] = await sequelize.query(
     `SELECT name FROM sys.indexes WHERE object_id = OBJECT_ID('Insumos') AND name = 'UQ_Insumos_Codigo'`
   );
@@ -149,9 +167,9 @@ async function sincronizarTablas() {
     console.log('[DB] Contador de códigos inicializado.');
   }
 
-  // ── Seed: 10 ambulancias AMB-01 a AMB-10 ──────────────────────────────────
+  // ── Seed: 20 ambulancias AMB-01 a AMB-20 ──────────────────────────────────
   console.log('[DB] Verificando ambulancias...');
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= 20; i++) {
     const codigo = `AMB-${String(i).padStart(2, '0')}`;
     const ya = await Ambulancia.findOne({ where: { codigo } });
     if (!ya) {
@@ -175,35 +193,55 @@ async function sincronizarTablas() {
     console.log('[DB] Roles creados: admin, ambulancia.');
   }
 
-  // ── Seed: usuario admin por defecto ───────────────────────────────────────
-  const adminExiste = await Usuario.findOne({ where: { cedula: '0000000001' } });
-  if (!adminExiste) {
-    const passwordHash = await bcrypt.hash('Admin123!', 12);
+  // ── Seed: usuarios ─────────────────────────────────────────────────────────
+  // Eliminar todos los usuarios existentes y recrear el seed completo
+  console.log('[DB] Eliminando usuarios existentes...');
+  try {
+    // Eliminar dependencias en Trazabilidad antes de borrar usuarios
+    await sequelize.query(`DELETE FROM [Trazabilidad]`);
+  } catch (_) { /* tabla vacía o sin registros dependientes */ }
+  await sequelize.query(`DELETE FROM [Usuarios]`);
+  console.log('[DB] Usuarios eliminados. Creando usuarios del sistema...');
+
+  const rolAdmin = await Role.findOne({ where: { nombre: 'admin' } });
+  const rolAmb   = await Role.findOne({ where: { nombre: 'ambulancia' } });
+
+  // 20 usuarios de ambulancias
+  for (let i = 1; i <= 20; i++) {
+    const num              = String(i).padStart(2, '0');
+    const numero_ambulancia = `Ambulancia${num}`;
+    const passwordHash     = await bcrypt.hash(`${numero_ambulancia}*`, 12);
+    const ambulancia       = await Ambulancia.findOne({ where: { codigo: `AMB-${num}` } });
+
     await Usuario.create({
-      nombre: 'Administrador',
-      cedula: '0000000001',
-      numero_ambulancia: 'ADMIN-CENTRAL',
-      password: passwordHash,
-      roleId: 1,
-      activo: true,
+      nombre:            `Ambulancia ${num}`,
+      numero_ambulancia,
+      password:          passwordHash,
+      roleId:            rolAmb.id,
+      activo:            true,
+      ambulanciaId:      ambulancia?.id || null,
     });
-    console.log('[DB] Admin creado — Cédula: 0000000001 / Pass: Admin123!');
+    console.log(`[DB]   ✓ Usuario: ${numero_ambulancia}`);
   }
 
-  // ── Seed: usuario de prueba ────────────────────────────────────────────────
-  const testExiste = await Usuario.findOne({ where: { cedula: '1234567890' } });
-  if (!testExiste) {
-    const passwordHash = await bcrypt.hash('Test1234!', 12);
+  // 2 administradores
+  for (let i = 1; i <= 2; i++) {
+    const num              = String(i).padStart(2, '0');
+    const numero_ambulancia = `Administrador${num}`;
+    const passwordHash     = await bcrypt.hash(`${numero_ambulancia}*`, 12);
+
     await Usuario.create({
-      nombre: 'Usuario Prueba Ambulancia',
-      cedula: '1234567890',
-      numero_ambulancia: 'AMB-01',
-      password: passwordHash,
-      roleId: 2,
-      activo: true,
+      nombre:            `Administrador ${num}`,
+      numero_ambulancia,
+      password:          passwordHash,
+      roleId:            rolAdmin.id,
+      activo:            true,
+      ambulanciaId:      null,
     });
-    console.log('[DB] Usuario prueba creado — Cédula: 1234567890 / Pass: Test1234!');
+    console.log(`[DB]   ✓ Admin: ${numero_ambulancia}`);
   }
+
+  console.log('[DB] ✓ 22 usuarios creados (20 ambulancias + 2 administradores).');
 
   await sequelize.close();
 }

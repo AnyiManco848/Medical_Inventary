@@ -148,7 +148,7 @@ function Navbar({ usuario, onCerrarSesion, backLink }) {
         {usuario && (
           <div style={{ textAlign: 'right' }}>
             <p style={{ fontSize: '0.85rem', color: C.textDark, fontWeight: '600', lineHeight: '1.2' }}>
-              {usuario.nombre || usuario.cedula}
+              {usuario.nombre || usuario.numero_ambulancia}
             </p>
             <p style={{ fontSize: '0.72rem', color: C.green, textTransform: 'capitalize', fontWeight: '500' }}>
               {usuario.rol}
@@ -200,9 +200,9 @@ export default function DashboardPage() {
     const usuarioCookie = Cookies.get('usuario');
     if (usuarioCookie) {
       try { setUsuario(JSON.parse(usuarioCookie)); }
-      catch { setUsuario({ id: decoded.id, cedula: decoded.cedula, rol: decoded.rol }); }
+      catch { setUsuario({ id: decoded.id, numero_ambulancia: decoded.numero_ambulancia, rol: decoded.rol }); }
     } else {
-      setUsuario({ id: decoded.id, cedula: decoded.cedula, rol: decoded.rol });
+      setUsuario({ id: decoded.id, numero_ambulancia: decoded.numero_ambulancia, rol: decoded.rol });
     }
   }, [router]);
 
@@ -227,7 +227,7 @@ export default function DashboardPage() {
         {/* Encabezado */}
         <div style={{ marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '1.45rem', fontWeight: '700', color: C.textDark, marginBottom: '0.25rem' }}>
-            Bienvenido, {usuario.nombre || usuario.cedula}
+            Bienvenido, {usuario.nombre || usuario.numero_ambulancia}
           </h1>
           <p style={{ color: C.textMid, fontSize: '0.875rem' }}>
             Panel de control · Rol:{' '}
