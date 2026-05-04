@@ -8,33 +8,31 @@ const DB_NAME     = process.env.DB_NAME || 'MedicalInventary';
 const DB_USER     = process.env.DB_USER;
 const DB_PASSWORD = process.env.DB_PASSWORD;
 const DB_HOST     = process.env.DB_HOST;
-const DB_PORT     = parseInt(process.env.DB_PORT) || 1433;
+const DB_PORT     = parseInt(process.env.DB_PORT) || 5432;
 
 async function crearBaseDeDatos() {
-  console.log('[DB] Conectando al servidor SQL Server (master)...');
-  const seqMaster = new Sequelize('master', DB_USER, DB_PASSWORD, {
+  if (process.env.DATABASE_URL) {
+    console.log('[DB] DATABASE_URL detectada — omitiendo creación de base de datos.');
+    return;
+  }
+
+  console.log('[DB] Conectando al servidor PostgreSQL (postgres)...');
+  const seqMaster = new Sequelize('postgres', DB_USER, DB_PASSWORD, {
     host: DB_HOST,
     port: DB_PORT,
-    dialect: 'mssql',
-    dialectOptions: {
-      options: {
-        encrypt: process.env.DB_ENCRYPT === 'true',
-        trustServerCertificate: process.env.DB_TRUST_CERT === 'true',
-        instanceName: process.env.DB_INSTANCE || undefined,
-      },
-    },
+    dialect: 'postgres',
     logging: false,
   });
 
   await seqMaster.authenticate();
-  console.log('[DB] Conexión a master exitosa.');
+  console.log('[DB] Conexión a postgres exitosa.');
 
   const [results] = await seqMaster.query(
-    `SELECT name FROM sys.databases WHERE name = '${DB_NAME}'`
+    `SELECT datname FROM pg_database WHERE datname = '${DB_NAME}'`
   );
   if (results.length === 0) {
     console.log(`[DB] Creando base de datos "${DB_NAME}"...`);
-    await seqMaster.query(`CREATE DATABASE [${DB_NAME}]`);
+    await seqMaster.query(`CREATE DATABASE "${DB_NAME}"`);
     console.log(`[DB] Base de datos "${DB_NAME}" creada.`);
   } else {
     console.log(`[DB] Base de datos "${DB_NAME}" ya existe.`);
@@ -43,14 +41,14 @@ async function crearBaseDeDatos() {
   await seqMaster.close();
 }
 
-async function agregarColumna(sequelize, tabla, columna, definicion) {
+async function agregarColumna(sequelize, tabla, columna, tipo) {
   const [rows] = await sequelize.query(
-    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-     WHERE TABLE_NAME = '${tabla}' AND COLUMN_NAME = '${columna}'`
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_name = '${tabla}' AND column_name = '${columna}'`
   );
   if (rows.length === 0) {
     console.log(`[DB] Agregando columna ${columna} a ${tabla}...`);
-    await sequelize.query(`ALTER TABLE [${tabla}] ADD [${columna}] ${definicion}`);
+    await sequelize.query(`ALTER TABLE "${tabla}" ADD COLUMN "${columna}" ${tipo}`);
     console.log(`[DB] ✓ ${columna} agregada.`);
   }
 }
@@ -70,69 +68,69 @@ async function sincronizarTablas() {
 
   // ── Migraciones: tabla Usuarios ───────────────────────────────────────────
   await agregarColumna(sequelize, 'Usuarios', 'ambulanciaId',
-    'INT NULL REFERENCES [Ambulancias]([id])');
-  await agregarColumna(sequelize, 'Usuarios', 'numero_ambulancia', 'NVARCHAR(50) NULL');
+    'INT NULL REFERENCES "Ambulancias"("id")');
+  await agregarColumna(sequelize, 'Usuarios', 'numero_ambulancia', 'VARCHAR(50) NULL');
 
-  // Eliminar índice único en cedula si existe (columna reemplazada por numero_ambulancia)
-  const [idxCedula] = await sequelize.query(
-    `SELECT i.name FROM sys.indexes i
-     JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-     JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-     WHERE i.object_id = OBJECT_ID('Usuarios') AND c.name = 'cedula' AND i.is_unique = 1`
-  );
+  // Eliminar índice único en cedula si existe
+  const [idxCedula] = await sequelize.query(`
+    SELECT i.relname AS name
+    FROM pg_class t
+    JOIN pg_index ix ON t.oid = ix.indrelid
+    JOIN pg_class i ON i.oid = ix.indexrelid
+    JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+    WHERE t.relname = 'Usuarios' AND a.attname = 'cedula' AND ix.indisunique = true
+  `);
   for (const idx of idxCedula) {
-    await sequelize.query(`DROP INDEX [${idx.name}] ON [Usuarios]`);
+    await sequelize.query(`DROP INDEX IF EXISTS "${idx.name}"`);
     console.log(`[DB] Índice ${idx.name} (cedula) eliminado.`);
   }
 
   // Eliminar columna cedula si existe
   const [colCedula] = await sequelize.query(
-    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-     WHERE TABLE_NAME = 'Usuarios' AND COLUMN_NAME = 'cedula'`
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_name = 'Usuarios' AND column_name = 'cedula'`
   );
   if (colCedula.length > 0) {
-    await sequelize.query(`ALTER TABLE [Usuarios] DROP COLUMN [cedula]`);
+    await sequelize.query(`ALTER TABLE "Usuarios" DROP COLUMN "cedula"`);
     console.log('[DB] Columna cedula eliminada.');
   }
 
   // Crear índice único en numero_ambulancia si no existe
   const [idxNumAmb] = await sequelize.query(
-    `SELECT i.name FROM sys.indexes i
-     JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-     JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-     WHERE i.object_id = OBJECT_ID('Usuarios') AND c.name = 'numero_ambulancia' AND i.is_unique = 1`
+    `SELECT indexname AS name FROM pg_indexes
+     WHERE tablename = 'Usuarios' AND indexname = 'Usuarios_numero_ambulancia'`
   );
   if (idxNumAmb.length === 0) {
     await sequelize.query(
-      `CREATE UNIQUE INDEX [Usuarios_numero_ambulancia] ON [Usuarios]([numero_ambulancia]) WHERE [numero_ambulancia] IS NOT NULL`
+      `CREATE UNIQUE INDEX "Usuarios_numero_ambulancia" ON "Usuarios"("numero_ambulancia") WHERE "numero_ambulancia" IS NOT NULL`
     );
     console.log('[DB] Índice único en numero_ambulancia creado.');
   }
 
   // ── Migraciones: tabla Insumos ─────────────────────────────────────────────
   const columnasInsumos = [
-    { name: 'cantidad_disponible', sql: '[cantidad_disponible] INT NOT NULL DEFAULT 1' },
-    { name: 'estado',              sql: "[estado] VARCHAR(20) NOT NULL DEFAULT 'activo'" },
-    { name: 'codigo_qr',           sql: '[codigo_qr] VARCHAR(255) NULL' },
-    { name: 'imagen_ruta',         sql: '[imagen_ruta] VARCHAR(500) NULL' },
-    { name: 'fecha_registro',      sql: '[fecha_registro] DATETIME NULL' },
-    { name: 'observaciones',       sql: '[observaciones] VARCHAR(500) NULL' },
-    { name: 'codigo',              sql: '[codigo] VARCHAR(20) NULL' },
-    { name: 'familia',             sql: '[familia] VARCHAR(50) NULL' },
-    { name: 'familia_abrev',       sql: '[familia_abrev] VARCHAR(5) NULL' },
-    { name: 'especificaciones',    sql: '[especificaciones] VARCHAR(500) NULL' },
-    { name: 'ambulanciaId',        sql: '[ambulanciaId] INT NULL' },
+    { name: 'cantidad_disponible', tipo: 'INT NOT NULL DEFAULT 1' },
+    { name: 'estado',              tipo: "VARCHAR(20) NOT NULL DEFAULT 'activo'" },
+    { name: 'codigo_qr',           tipo: 'VARCHAR(255) NULL' },
+    { name: 'imagen_ruta',         tipo: 'VARCHAR(500) NULL' },
+    { name: 'fecha_registro',      tipo: 'TIMESTAMP NULL' },
+    { name: 'observaciones',       tipo: 'VARCHAR(500) NULL' },
+    { name: 'codigo',              tipo: 'VARCHAR(20) NULL' },
+    { name: 'familia',             tipo: 'VARCHAR(50) NULL' },
+    { name: 'familia_abrev',       tipo: 'VARCHAR(5) NULL' },
+    { name: 'especificaciones',    tipo: 'VARCHAR(500) NULL' },
+    { name: 'ambulanciaId',        tipo: 'INT NULL' },
   ];
 
   for (const col of columnasInsumos) {
-    await agregarColumna(sequelize, 'Insumos', col.name, col.sql);
+    await agregarColumna(sequelize, 'Insumos', col.name, col.tipo);
   }
 
   // Poblar codigo_qr con UUID para insumos legacy que tengan NULL
-  const [sinQR] = await sequelize.query(`SELECT id FROM [Insumos] WHERE [codigo_qr] IS NULL`);
+  const [sinQR] = await sequelize.query(`SELECT id FROM "Insumos" WHERE "codigo_qr" IS NULL`);
   for (const row of sinQR) {
     await sequelize.query(
-      `UPDATE [Insumos] SET [codigo_qr] = ? WHERE id = ?`,
+      `UPDATE "Insumos" SET "codigo_qr" = ? WHERE id = ?`,
       { replacements: [crypto.randomUUID(), row.id] }
     );
   }
@@ -140,30 +138,30 @@ async function sincronizarTablas() {
 
   // Índice único en codigo_qr
   const [idxQR] = await sequelize.query(
-    `SELECT name FROM sys.indexes WHERE object_id = OBJECT_ID('Insumos') AND name = 'UQ_Insumos_CodigoQR'`
+    `SELECT indexname AS name FROM pg_indexes WHERE tablename = 'Insumos' AND indexname = 'UQ_Insumos_CodigoQR'`
   );
   if (idxQR.length === 0) {
     await sequelize.query(
-      `CREATE UNIQUE INDEX [UQ_Insumos_CodigoQR] ON [Insumos]([codigo_qr]) WHERE [codigo_qr] IS NOT NULL`
+      `CREATE UNIQUE INDEX "UQ_Insumos_CodigoQR" ON "Insumos"("codigo_qr") WHERE "codigo_qr" IS NOT NULL`
     );
     console.log('[DB] Índice único en codigo_qr creado.');
   }
 
   // Índice único en codigo
   const [idxCodigo] = await sequelize.query(
-    `SELECT name FROM sys.indexes WHERE object_id = OBJECT_ID('Insumos') AND name = 'UQ_Insumos_Codigo'`
+    `SELECT indexname AS name FROM pg_indexes WHERE tablename = 'Insumos' AND indexname = 'UQ_Insumos_Codigo'`
   );
   if (idxCodigo.length === 0) {
     await sequelize.query(
-      `CREATE UNIQUE INDEX [UQ_Insumos_Codigo] ON [Insumos]([codigo]) WHERE [codigo] IS NOT NULL`
+      `CREATE UNIQUE INDEX "UQ_Insumos_Codigo" ON "Insumos"("codigo") WHERE "codigo" IS NOT NULL`
     );
     console.log('[DB] Índice único en codigo creado.');
   }
 
   // ── Inicializar ContadorCodigo ─────────────────────────────────────────────
-  const [contRows] = await sequelize.query(`SELECT COUNT(1) AS cnt FROM [ContadorCodigo]`);
+  const [contRows] = await sequelize.query(`SELECT COUNT(1)::int AS cnt FROM "ContadorCodigo"`);
   if ((contRows[0]?.cnt ?? 0) == 0) {
-    await sequelize.query(`INSERT INTO [ContadorCodigo] ([valor]) VALUES (0)`);
+    await sequelize.query(`INSERT INTO "ContadorCodigo" ("valor") VALUES (0)`);
     console.log('[DB] Contador de códigos inicializado.');
   }
 
@@ -197,10 +195,9 @@ async function sincronizarTablas() {
   // Eliminar todos los usuarios existentes y recrear el seed completo
   console.log('[DB] Eliminando usuarios existentes...');
   try {
-    // Eliminar dependencias en Trazabilidad antes de borrar usuarios
-    await sequelize.query(`DELETE FROM [Trazabilidad]`);
+    await sequelize.query(`DELETE FROM "Trazabilidad"`);
   } catch (_) { /* tabla vacía o sin registros dependientes */ }
-  await sequelize.query(`DELETE FROM [Usuarios]`);
+  await sequelize.query(`DELETE FROM "Usuarios"`);
   console.log('[DB] Usuarios eliminados. Creando usuarios del sistema...');
 
   const rolAdmin = await Role.findOne({ where: { nombre: 'admin' } });

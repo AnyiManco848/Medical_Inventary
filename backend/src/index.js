@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 4000;
 
 // --- Middlewares globales ---
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true,
 }));
 app.use(express.json());
@@ -53,7 +53,7 @@ app.use((err, req, res, next) => {
 async function iniciar() {
   try {
     await sequelize.authenticate();
-    console.log('[DB] Conexión a SQL Server establecida correctamente.');
+    console.log('[DB] Conexión a PostgreSQL establecida correctamente.');
   } catch (error) {
     console.error('[DB] No se pudo conectar a la base de datos:', error.message);
   }

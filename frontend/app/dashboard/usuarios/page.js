@@ -6,6 +6,8 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
 /* ── Paleta ──────────────────────────────────────────────────────── */
 const C = {
   bg:          '#f0f5f2',
@@ -132,7 +134,7 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
 
   useEffect(() => {
     const token = Cookies.get('token');
-    axios.get('http://localhost:4000/api/ambulancias', {
+    axios.get(`${API}/api/ambulancias`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(({ data }) => setAmbulancias(data))
@@ -172,9 +174,9 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
       }
 
       if (esNuevo) {
-        await axios.post('http://localhost:4000/api/usuarios', payload, { headers });
+        await axios.post(`${API}/api/usuarios`, payload, { headers });
       } else {
-        await axios.put(`http://localhost:4000/api/usuarios/${usuario.id}`, payload, { headers });
+        await axios.put(`${API}/api/usuarios/${usuario.id}`, payload, { headers });
       }
       onGuardar();
     } catch (err) {
@@ -369,7 +371,7 @@ export default function UsuariosPage() {
     setError('');
     try {
       const token   = Cookies.get('token');
-      const { data } = await axios.get('http://localhost:4000/api/usuarios', {
+      const { data } = await axios.get(`${API}/api/usuarios`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsuarios(data);
@@ -386,7 +388,7 @@ export default function UsuariosPage() {
     if (!confirm('¿Desactivar este usuario?')) return;
     try {
       const token = Cookies.get('token');
-      await axios.delete(`http://localhost:4000/api/usuarios/${id}`, {
+      await axios.delete(`${API}/api/usuarios/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       cargarUsuarios();

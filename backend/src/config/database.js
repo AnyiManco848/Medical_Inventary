@@ -1,29 +1,33 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT) || 1433,
-    dialect: 'mssql',
+let sequelize;
+
+if (process.env.DATABASE_URL) {
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres',
     dialectOptions: {
-      options: {
-        encrypt: process.env.DB_ENCRYPT === 'true',
-        trustServerCertificate: process.env.DB_TRUST_CERT === 'true',
-        instanceName: process.env.DB_INSTANCE || undefined,
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
       },
     },
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
-    pool: {
-      max: 10,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
-  }
-);
+    pool: { max: 10, min: 0, acquire: 30000, idle: 10000 },
+  });
+} else {
+  sequelize = new Sequelize(
+    process.env.DB_NAME || 'MedicalInventary',
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
+    {
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT) || 5432,
+      dialect: 'postgres',
+      logging: process.env.NODE_ENV === 'development' ? console.log : false,
+      pool: { max: 10, min: 0, acquire: 30000, idle: 10000 },
+    }
+  );
+}
 
 module.exports = sequelize;

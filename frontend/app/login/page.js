@@ -166,7 +166,7 @@ export default function LoginPage() {
 
     setCargando(true);
     try {
-      const { data } = await axios.post('http://localhost:4000/api/auth/login', {
+      const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/auth/login`, {
         numero_ambulancia: usuario.trim(),
         password,
       });
