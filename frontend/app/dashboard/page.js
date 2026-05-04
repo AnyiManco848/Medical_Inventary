@@ -302,7 +302,7 @@ export default function DashboardPage() {
               Acciones disponibles
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '1.25rem' }}>
-              <Link href="/dashboard/inventario" style={{ textDecoration: 'none' }}>
+              <Link href="/dashboard/entregar" style={{ textDecoration: 'none' }}>
                 <CardAccion
                   titulo="Entregar insumo"
                   descripcion="Registrar la entrega de insumos médicos a un hospital o unidad."

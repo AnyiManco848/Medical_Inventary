@@ -57,6 +57,7 @@ async function sincronizarTablas() {
   console.log('[DB] Conectando a la base de datos...');
   const {
     sequelize, Role, Usuario, Ambulancia, Insumo, MovimientoInventario, ContadorCodigo,
+    CentroAsistencial,
   } = require('../models');
 
   await sequelize.authenticate();
@@ -163,6 +164,39 @@ async function sincronizarTablas() {
   if ((contRows[0]?.cnt ?? 0) == 0) {
     await sequelize.query(`INSERT INTO "ContadorCodigo" ("valor") VALUES (0)`);
     console.log('[DB] Contador de códigos inicializado.');
+  }
+
+  // ── Seed: CentrosAsistenciales ─────────────────────────────────────────────
+  const countCentros = await CentroAsistencial.count();
+  if (countCentros === 0) {
+    const nombres = [
+      'Hospital General de Medellín',
+      'Hospital Universitario San Vicente Fundación',
+      'Clínica CES',
+      'Clínica El Rosario - Sede Centro',
+      'Clínica El Rosario - Sede Tesoro',
+      'Clínica Las Américas',
+      'Clínica León XIII',
+      'Clínica Medellín',
+      'Clínica Oftalmológica de Antioquia',
+      'Clínica Prado',
+      'Clínica Reina Catalina',
+      'Clínica Sagrado Corazón',
+      'Clínica Soma',
+      'Hospital Pablo Tobón Uribe',
+      'Hospital Manuel Uribe Ángel (Envigado)',
+      'Clínica Envigado',
+      'Hospital Marco Fidel Suárez (Bello)',
+      'Hospital Venancio Díaz Díaz (Sabaneta)',
+      'ESE Hospital Itagüí',
+      'Clínica Somer (Rionegro, zona de influencia)',
+    ];
+    const registros = nombres.map(nombre => ({
+      nombre, municipio: 'Valle de Aburrá', activo: true, esOtro: false,
+    }));
+    registros.push({ nombre: 'Otro', municipio: 'Valle de Aburrá', activo: true, esOtro: true });
+    await CentroAsistencial.bulkCreate(registros);
+    console.log(`[DB] ✓ ${registros.length} centros asistenciales creados.`);
   }
 
   // ── Seed: 20 ambulancias AMB-01 a AMB-20 ──────────────────────────────────

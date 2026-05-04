@@ -10,6 +10,8 @@ const MovimientoInventario = require('./MovimientoInventario');
 const BajaInsumo = require('./BajaInsumo');
 const ReasignacionAmbulancia = require('./ReasignacionAmbulancia');
 const ContadorCodigo = require('./ContadorCodigo');
+const CentroAsistencial = require('./CentroAsistencial');
+const MovimientoInsumo = require('./MovimientoInsumo');
 
 // --- Asociaciones ---
 
@@ -40,6 +42,12 @@ Trazabilidad.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario', constr
 MovimientoInventario.belongsTo(Insumo, { foreignKey: 'id_insumo', as: 'insumo', constraints: false });
 Insumo.hasMany(MovimientoInventario, { foreignKey: 'id_insumo', as: 'movimientos', constraints: false });
 
+// Movimientos de insumo (entrega/recogida a pacientes)
+MovimientoInsumo.belongsTo(Insumo, { foreignKey: 'insumoId', as: 'insumo', constraints: false });
+MovimientoInsumo.belongsTo(CentroAsistencial, { foreignKey: 'centroAsistencialId', as: 'centroAsistencial', constraints: false });
+MovimientoInsumo.belongsTo(Ambulancia, { foreignKey: 'ambulanciaId', as: 'ambulancia', constraints: false });
+MovimientoInsumo.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario', constraints: false });
+
 module.exports = {
   sequelize,
   Role,
@@ -52,4 +60,6 @@ module.exports = {
   BajaInsumo,
   ReasignacionAmbulancia,
   ContadorCodigo,
+  CentroAsistencial,
+  MovimientoInsumo,
 };
