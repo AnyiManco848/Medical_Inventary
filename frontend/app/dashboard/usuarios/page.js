@@ -101,23 +101,35 @@ const EcgIcon = () => (
   </svg>
 );
 
+/* ── Ícono ojo SVG ───────────────────────────────────────────────── */
+const EyeIcon = ({ open }) => open ? (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+) : (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+);
+
 /* ── Modal ───────────────────────────────────────────────────────── */
 function ModalUsuario({ usuario, onGuardar, onCerrar }) {
   const esNuevo = !usuario?.id;
   const [form, setForm] = useState({
     nombre:            usuario?.nombre             || '',
-    cedula:            usuario?.cedula             || '',
     numero_ambulancia: usuario?.numero_ambulancia  || '',
     password:          '',
     roleId:            usuario?.rol?.id || usuario?.roleId || 1,
     activo:            usuario?.activo !== undefined ? usuario.activo : true,
     ambulanciaId:      usuario?.ambulancia?.id || usuario?.ambulanciaId || '',
   });
-  const [error,        setError]        = useState('');
-  const [cargando,     setCargando]     = useState(false);
-  const [ambulancias,  setAmbulancias]  = useState([]);
+  const [error,           setError]           = useState('');
+  const [cargando,        setCargando]        = useState(false);
+  const [ambulancias,     setAmbulancias]     = useState([]);
+  const [mostrarPassword, setMostrarPassword] = useState(false);
 
-  // Cargar ambulancias activas al montar el modal
   useEffect(() => {
     const token = Cookies.get('token');
     axios.get('http://localhost:4000/api/ambulancias', {
@@ -129,11 +141,6 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    // Permitir solo dígitos en el campo cédula
-    if (name === 'cedula') {
-      setForm((prev) => ({ ...prev, cedula: value.replace(/\D/g, '') }));
-      return;
-    }
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
@@ -158,7 +165,6 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
       const payload = { ...form, roleId: parseInt(form.roleId) };
       if (!esNuevo && !payload.password) delete payload.password;
 
-      // Si el rol es admin, no enviar ambulanciaId; si es ambulancia, convertir a número o null
       if (rolNombre === 'admin') {
         payload.ambulanciaId = null;
       } else {
@@ -219,52 +225,64 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
               <input name="nombre" value={form.nombre} onChange={handleChange} required style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
             </div>
 
-            {/* Cédula */}
+            {/* Número de Ambulancia / Usuario */}
             <div>
-              <label style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>Cédula (identificador de login)</label>
-              <input
-                name="cedula"
-                type="text"
-                inputMode="numeric"
-                value={form.cedula}
-                onChange={handleChange}
-                required
-                maxLength={15}
-                placeholder="Solo dígitos, 6-15 caracteres"
-                style={inputStyle}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-              />
-            </div>
-
-            {/* Número de ambulancia */}
-            <div>
-              <label style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>Número de ambulancia asignada</label>
+              <label style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>
+                Número de Ambulancia / Usuario
+              </label>
               <input
                 name="numero_ambulancia"
                 type="text"
                 value={form.numero_ambulancia}
                 onChange={handleChange}
                 required
-                placeholder="Ej: AMB-01 o ADMIN-CENTRAL"
+                placeholder="Ej: Ambulancia01"
                 style={inputStyle}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
               />
             </div>
 
-            {/* Contraseña */}
+            {/* Contraseña con mostrar/ocultar */}
             <div>
               <label style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>
                 Contraseña{' '}
                 {!esNuevo && <span style={{ color: C.textLight, fontWeight: '400' }}>(dejar vacío para no cambiar)</span>}
               </label>
-              <input
-                name="password" type="password" value={form.password} onChange={handleChange}
-                required={esNuevo}
-                placeholder={esNuevo ? 'Mín. 8 chars, 1 número, 1 símbolo' : '••••••••'}
-                style={inputStyle} onFocus={handleFocus} onBlur={handleBlur}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  name="password"
+                  type={mostrarPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={handleChange}
+                  required={esNuevo}
+                  placeholder={esNuevo ? 'Mín. 8 chars, 1 número, 1 símbolo' : '••••••••'}
+                  style={{ ...inputStyle, paddingRight: '2.5rem' }}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarPassword((v) => !v)}
+                  style={{
+                    position:   'absolute',
+                    right:      '0.75rem',
+                    top:        '50%',
+                    transform:  'translateY(-50%)',
+                    background: 'none',
+                    border:     'none',
+                    cursor:     'pointer',
+                    color:      C.textLight,
+                    padding:    0,
+                    display:    'flex',
+                    alignItems: 'center',
+                  }}
+                  tabIndex={-1}
+                  aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  <EyeIcon open={mostrarPassword} />
+                </button>
+              </div>
             </div>
 
             {/* Rol */}
@@ -278,7 +296,7 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
               </select>
             </div>
 
-            {/* Ambulancia — visible solo cuando el rol seleccionado es "ambulancia" */}
+            {/* Ambulancia — visible solo cuando el rol es "ambulancia" */}
             {parseInt(form.roleId) === 2 && (
               <div>
                 <label style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>
@@ -426,7 +444,6 @@ export default function UsuariosPage() {
       </header>
 
       <main style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
-        {/* Encabezado de sección */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1 style={{ fontSize: '1.4rem', fontWeight: '700', color: C.textDark, marginBottom: '0.2rem' }}>
@@ -460,7 +477,7 @@ export default function UsuariosPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: C.greenLight, borderBottom: `1px solid ${C.greenBorder}` }}>
-                  {['Nombre', 'Cédula', 'Núm. Ambulancia', 'Rol', 'Estado', 'Acciones'].map((h) => (
+                  {['Nombre', 'Usuario', 'Rol', 'Estado', 'Acciones'].map((h) => (
                     <th key={h} style={{
                       padding:       '0.75rem 1rem',
                       textAlign:     'left',
@@ -488,9 +505,6 @@ export default function UsuariosPage() {
                       {u.nombre}
                     </td>
                     <td style={{ padding: '0.85rem 1rem', color: C.textMid, fontSize: '0.85rem', fontFamily: 'monospace' }}>
-                      {u.cedula || '—'}
-                    </td>
-                    <td style={{ padding: '0.85rem 1rem', color: C.textMid, fontSize: '0.85rem' }}>
                       {u.numero_ambulancia || '—'}
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>

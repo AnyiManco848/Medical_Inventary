@@ -1,17 +1,6 @@
-// Seeder: crea o actualiza el usuario administrador principal
+// Seeder: crea o actualiza los 2 administradores del sistema
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-
-async function asegurarColumna(sequelize, tabla, columna, definicion) {
-  const [cols] = await sequelize.query(
-    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-     WHERE TABLE_NAME = '${tabla}' AND COLUMN_NAME = '${columna}'`
-  );
-  if (cols.length === 0) {
-    console.log(`[SEED] Agregando columna ${columna} a ${tabla}...`);
-    await sequelize.query(`ALTER TABLE [${tabla}] ADD [${columna}] ${definicion}`);
-  }
-}
 
 async function seedAdmin() {
   const { sequelize, Role, Usuario } = require('../models');
@@ -19,67 +8,56 @@ async function seedAdmin() {
   await sequelize.authenticate();
   console.log('[SEED] Conexión a la base de datos exitosa.');
 
-  // Asegurar que las columnas del modelo existen antes de consultarlas
-  await asegurarColumna(sequelize, 'Usuarios', 'cedula', 'NVARCHAR(15) NULL');
-  await asegurarColumna(sequelize, 'Usuarios', 'numero_ambulancia', 'NVARCHAR(50) NULL');
-  await asegurarColumna(sequelize, 'Usuarios', 'ambulanciaId', 'INT NULL REFERENCES [Ambulancias]([id])');
-
-  // Obtener el rol admin
   const rolAdmin = await Role.findOne({ where: { nombre: 'admin' } });
   if (!rolAdmin) {
-    throw new Error(
-      'Rol "admin" no encontrado. Ejecuta primero: npm run db:init'
-    );
+    throw new Error('Rol "admin" no encontrado. Ejecuta primero: npm run db:init');
   }
 
-  const CEDULA = '1038798848';
-  const PASSWORD_PLAIN = '1030Anyi*';
-  const passwordHash = await bcrypt.hash(PASSWORD_PLAIN, 12);
+  const admins = [
+    { nombre: 'Administrador 01', numero_ambulancia: 'Administrador01', password_plain: 'Administrador01*' },
+    { nombre: 'Administrador 02', numero_ambulancia: 'Administrador02', password_plain: 'Administrador02*' },
+  ];
 
-  const usuarioExistente = await Usuario.findOne({ where: { cedula: CEDULA } });
+  for (const admin of admins) {
+    const passwordHash = await bcrypt.hash(admin.password_plain, 12);
+    const existente = await Usuario.findOne({ where: { numero_ambulancia: admin.numero_ambulancia } });
 
-  if (usuarioExistente) {
-    console.log('[SEED] Usuario ya existe. Actualizando datos...');
-    await usuarioExistente.update({
-      numero_ambulancia: '01',
-      password: passwordHash,
-      roleId: rolAdmin.id,
-      activo: true,
-      intentos_fallidos: 0,
-      bloqueado_hasta: null,
-      ambulanciaId: null, // los admin no tienen ambulancia asignada
-    });
-    console.log('[SEED] Usuario actualizado correctamente.');
-  } else {
-    console.log('[SEED] Creando nuevo usuario administrador...');
-    await Usuario.create({
-      nombre: 'Anyi',
-      cedula: CEDULA,
-      numero_ambulancia: '01',
-      password: passwordHash,
-      roleId: rolAdmin.id,
-      activo: true,
-      ambulanciaId: null,
-    });
-    console.log('[SEED] Usuario creado correctamente.');
+    if (existente) {
+      await existente.update({
+        nombre:           admin.nombre,
+        password:         passwordHash,
+        roleId:           rolAdmin.id,
+        activo:           true,
+        intentos_fallidos: 0,
+        bloqueado_hasta:  null,
+        ambulanciaId:     null,
+      });
+      console.log(`[SEED] Actualizado: ${admin.numero_ambulancia}`);
+    } else {
+      await Usuario.create({
+        nombre:            admin.nombre,
+        numero_ambulancia: admin.numero_ambulancia,
+        password:          passwordHash,
+        roleId:            rolAdmin.id,
+        activo:            true,
+        ambulanciaId:      null,
+      });
+      console.log(`[SEED] Creado: ${admin.numero_ambulancia}`);
+    }
+
+    console.log(`[SEED]   Usuario: ${admin.numero_ambulancia} | Rol: admin`);
   }
-
-  console.log('[SEED] ──────────────────────────────────');
-  console.log('[SEED]   Cédula:           ' + CEDULA);
-  console.log('[SEED]   Núm. ambulancia:  01');
-  console.log('[SEED]   Rol:              admin');
-  console.log('[SEED] ──────────────────────────────────');
 
   await sequelize.close();
 }
 
 seedAdmin()
   .then(() => {
-    console.log('[SEED] ✅ Seeder ejecutado exitosamente.');
+    console.log('[SEED] ✅ Administradores creados/actualizados.');
     process.exit(0);
   })
   .catch((err) => {
-    console.error('[SEED] ❌ Error en el seeder:', err.message);
+    console.error('[SEED] ❌ Error:', err.message);
     console.error(err);
     process.exit(1);
   });

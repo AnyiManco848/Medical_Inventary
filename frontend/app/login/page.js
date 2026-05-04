@@ -7,15 +7,15 @@ import Cookies from 'js-cookie';
 
 /* ── Paleta ──────────────────────────────────────────────────────── */
 const C = {
-  bg:           '#f0f5f2',          // fondo general: menta muy clara
-  green:        '#2d8653',          // verde médico profesional
-  greenLight:   '#e8f3ed',          // tono muy claro para fondos de input
-  greenMid:     '#4a9e6e',          // verde medio (hover)
-  greenBorder:  '#b5d9c5',          // borde normal
-  greenFocus:   '#2d8653',          // borde en focus
-  textDark:     '#1a2e25',          // texto principal
-  textMid:      '#4a6a57',          // subtítulo / labels
-  textLight:    '#7a9e8a',          // placeholder
+  bg:           '#f0f5f2',
+  green:        '#2d8653',
+  greenLight:   '#e8f3ed',
+  greenMid:     '#4a9e6e',
+  greenBorder:  '#b5d9c5',
+  greenFocus:   '#2d8653',
+  textDark:     '#1a2e25',
+  textMid:      '#4a6a57',
+  textLight:    '#7a9e8a',
   cardBg:       '#ffffff',
   cardShadow:   '0 4px 32px rgba(45,134,83,0.10), 0 1px 4px rgba(0,0,0,0.06)',
   errorColor:   '#c0392b',
@@ -32,7 +32,6 @@ function EcgBackground() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    // Patrón PQRST (ry negativo = arriba)
     const pattern = [
       [0,    0],
       [0.04, 0],
@@ -134,23 +133,41 @@ const EcgIcon = () => (
   </svg>
 );
 
+/* ── Ícono ojo SVG ───────────────────────────────────────────────── */
+const EyeIcon = ({ open }) => open ? (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+) : (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+);
+
 /* ── Página principal ────────────────────────────────────────────── */
 export default function LoginPage() {
-  const router             = useRouter();
-  const [usuario,          setUsuario]       = useState('');
-  const [password,         setPassword]      = useState('');
-  const [showPassword,     setShowPassword]  = useState(false);
-  const [error,            setError]         = useState('');
-  const [cargando,         setCargando]      = useState(false);
+  const router               = useRouter();
+  const [usuario,            setUsuario]          = useState('');
+  const [password,           setPassword]         = useState('');
+  const [mostrarPassword,    setMostrarPassword]  = useState(false);
+  const [error,              setError]            = useState('');
+  const [cargando,           setCargando]         = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
+    if (!usuario.trim()) {
+      setError('El usuario no puede estar vacío.');
+      return;
+    }
+
     setCargando(true);
     try {
       const { data } = await axios.post('http://localhost:4000/api/auth/login', {
-        usuario:  usuario.trim(),
+        numero_ambulancia: usuario.trim(),
         password,
       });
       Cookies.set('token',   data.token,                   { expires: 1 / 3, sameSite: 'strict' });
@@ -196,11 +213,9 @@ export default function LoginPage() {
     <>
       <style>{STYLES}</style>
 
-      {/* Fondo sólido claro */}
       <div style={{ position: 'fixed', inset: 0, backgroundColor: C.bg, zIndex: -1 }} />
       <EcgBackground />
 
-      {/* Layout */}
       <div style={{
         position:       'relative',
         zIndex:         1,
@@ -289,19 +304,20 @@ export default function LoginPage() {
                   value={usuario}
                   onChange={(e) => setUsuario(e.target.value)}
                   required
-                  placeholder="Ej: Ambulancia2"
+                  placeholder="Ej: Ambulancia01 o Administrador01"
                   onFocus={onFocus}
                   onBlur={onBlur}
                   style={inputStyle}
+                  autoComplete="username"
                 />
               </div>
 
-              {/* Contraseña con opción de mostrar/ocultar */}
+              {/* Contraseña con mostrar/ocultar */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={labelStyle}>Contraseña</label>
                 <div style={{ position: 'relative' }}>
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={mostrarPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -309,40 +325,28 @@ export default function LoginPage() {
                     onFocus={onFocus}
                     onBlur={onBlur}
                     style={{ ...inputStyle, paddingRight: '2.5rem' }}
+                    autoComplete="current-password"
                   />
-                  {/* Botón para mostrar u ocultar la contraseña */}
                   <button
                     type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    onClick={() => setMostrarPassword((v) => !v)}
                     style={{
                       position:        'absolute',
-                      right:           '0.65rem',
+                      right:           '0.75rem',
                       top:             '50%',
                       transform:       'translateY(-50%)',
                       background:      'none',
                       border:          'none',
                       cursor:          'pointer',
-                      padding:         '0',
                       color:           C.textLight,
+                      padding:         0,
                       display:         'flex',
                       alignItems:      'center',
                     }}
+                    tabIndex={-1}
+                    aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
-                    {showPassword ? (
-                      /* Ojo tachado — contraseña visible */
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                        <line x1="1" y1="1" x2="23" y2="23"/>
-                      </svg>
-                    ) : (
-                      /* Ojo abierto — contraseña oculta */
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
-                    )}
+                    <EyeIcon open={mostrarPassword} />
                   </button>
                 </div>
               </div>

@@ -105,7 +105,7 @@ function Navbar({ usuario, onCerrarSesion }) {
         {usuario && (
           <div style={{ textAlign: 'right' }}>
             <p style={{ fontSize: '0.85rem', color: C.textDark, fontWeight: '600', lineHeight: '1.2' }}>
-              {usuario.nombre || usuario.cedula}
+              {usuario.nombre || usuario.numero_ambulancia}
             </p>
             <p style={{ fontSize: '0.72rem', color: C.green, textTransform: 'capitalize', fontWeight: '500' }}>
               {usuario.rol}
@@ -999,9 +999,9 @@ export default function InventarioPage() {
     setToken(tkn);
     try {
       const usr = Cookies.get('usuario');
-      setUsuario(usr ? JSON.parse(usr) : { cedula: decoded.cedula, rol: decoded.rol });
+      setUsuario(usr ? JSON.parse(usr) : { numero_ambulancia: decoded.numero_ambulancia, rol: decoded.rol });
     } catch {
-      setUsuario({ cedula: decoded.cedula, rol: decoded.rol });
+      setUsuario({ numero_ambulancia: decoded.numero_ambulancia, rol: decoded.rol });
     }
   }, [router]);
 

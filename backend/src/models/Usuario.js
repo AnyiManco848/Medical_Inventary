@@ -11,28 +11,16 @@ const Usuario = sequelize.define('Usuario', {
     type: DataTypes.STRING(100),
     allowNull: false,
   },
-  // cedula: identificador principal de login — único, solo dígitos, 6-15 caracteres
-  cedula: {
-    type: DataTypes.STRING(15),
-    allowNull: false,
-    validate: {
-      is: {
-        args: /^[0-9]{6,15}$/,
-        msg: 'La cédula debe contener solo dígitos y tener entre 6 y 15 caracteres',
-      },
-    },
-  },
-  // numero_ambulancia: segundo factor de autenticación almacenado por usuario
+  // numero_ambulancia: identificador único de login (ej: "Ambulancia01", "Administrador01")
   numero_ambulancia: {
     type: DataTypes.STRING(50),
     allowNull: false,
     validate: {
       notEmpty: {
-        msg: 'El número de ambulancia no puede estar vacío',
+        msg: 'El identificador de usuario no puede estar vacío',
       },
     },
   },
-  // Siempre almacenar hash bcrypt, nunca la contraseña en texto plano
   password: {
     type: DataTypes.STRING(255),
     allowNull: false,
@@ -57,7 +45,6 @@ const Usuario = sequelize.define('Usuario', {
       key: 'id',
     },
   },
-  // FK opcional: solo usuarios con rol "ambulancia" tienen ambulancia asignada
   ambulanciaId: {
     type: DataTypes.INTEGER,
     allowNull: true,
@@ -71,8 +58,7 @@ const Usuario = sequelize.define('Usuario', {
   tableName: 'Usuarios',
   timestamps: true,
   indexes: [
-    // cedula es el nuevo identificador único de login
-    { unique: true, fields: ['cedula'] },
+    { unique: true, fields: ['numero_ambulancia'] },
   ],
 });
 
