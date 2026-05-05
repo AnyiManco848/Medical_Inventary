@@ -3,7 +3,7 @@ const router = express.Router();
 const upload = require('../config/upload');
 const { verificarToken } = require('../middlewares/auth.middleware');
 const {
-  listar, listarBajas, obtener, buscarPorCodigo, buscarPorQR,
+  listar, listarBajas, obtener, buscar, buscarPorQR,
   crear, editar, darDeBaja, reasignar, generarQR,
   historialReasignaciones, eliminarLogico, cambiarEstado, historial,
   registrarMovimiento,
@@ -13,7 +13,7 @@ router.use(verificarToken);
 
 // Rutas específicas ANTES de :id para evitar colisiones de parámetros
 router.get('/bajas', listarBajas);
-router.get('/buscar/:codigo', buscarPorCodigo);
+router.get('/buscar', buscar);
 router.get('/qr/:codigo', buscarPorQR);
 router.get('/', listar);
 router.post('/', crear);

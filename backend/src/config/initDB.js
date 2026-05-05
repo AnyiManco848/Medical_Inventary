@@ -10,6 +10,25 @@ const DB_PASSWORD = process.env.DB_PASSWORD;
 const DB_HOST     = process.env.DB_HOST;
 const DB_PORT     = parseInt(process.env.DB_PORT) || 5432;
 
+// ── Stock seed ────────────────────────────────────────────────────────────────
+const STOCK_BODEGA = [
+  { nombre: 'Collarín cervical adulto',    familia: 'Collarín cervical', familia_abrev: 'COL', especificaciones: 'Adulto',    cantidad: 10 },
+  { nombre: 'Collarín cervical pediátrico',familia: 'Collarín cervical', familia_abrev: 'COL', especificaciones: 'Pediátrico', cantidad:  8 },
+  { nombre: 'Camilla Baxstrap',            familia: 'Baxstrap',          familia_abrev: 'BAX', especificaciones: null,         cantidad:  5 },
+  { nombre: 'Pinza Rochester',             familia: 'Pinza Rochester',   familia_abrev: 'ROC', especificaciones: null,         cantidad: 15 },
+  { nombre: 'Araña',                       familia: 'Araña',             familia_abrev: 'ARA', especificaciones: null,         cantidad:  5 },
+  { nombre: 'Bloque lateral',              familia: 'Bloque lateral',    familia_abrev: 'BLQ', especificaciones: null,         cantidad: 10 },
+];
+
+const STOCK_AMBULANCIA = [
+  { nombre: 'Collarín cervical adulto',    familia: 'Collarín cervical', familia_abrev: 'COL', especificaciones: 'Adulto',    cantidad: 3 },
+  { nombre: 'Collarín cervical pediátrico',familia: 'Collarín cervical', familia_abrev: 'COL', especificaciones: 'Pediátrico', cantidad: 2 },
+  { nombre: 'Camilla Baxstrap',            familia: 'Baxstrap',          familia_abrev: 'BAX', especificaciones: null,         cantidad: 1 },
+  { nombre: 'Pinza Rochester',             familia: 'Pinza Rochester',   familia_abrev: 'ROC', especificaciones: null,         cantidad: 4 },
+  { nombre: 'Araña',                       familia: 'Araña',             familia_abrev: 'ARA', especificaciones: null,         cantidad: 1 },
+  { nombre: 'Bloque lateral',              familia: 'Bloque lateral',    familia_abrev: 'BLQ', especificaciones: null,         cantidad: 2 },
+];
+
 async function crearBaseDeDatos() {
   if (process.env.DATABASE_URL) {
     console.log('[DB] DATABASE_URL detectada — omitiendo creación de base de datos.');
@@ -62,6 +81,9 @@ async function sincronizarTablas() {
 
   await sequelize.authenticate();
   console.log('[DB] Conexión exitosa.');
+
+  // Extensiones PostgreSQL requeridas
+  await sequelize.query('CREATE EXTENSION IF NOT EXISTS unaccent');
 
   console.log('[DB] Sincronizando tablas...');
   await sequelize.sync({ force: false });
@@ -274,7 +296,75 @@ async function sincronizarTablas() {
 
   console.log('[DB] ✓ 22 usuarios creados (20 ambulancias + 2 administradores).');
 
+  // ── Seed: insumos ──────────────────────────────────────────────────────────
+  await seedInsumos(sequelize, Insumo, Ambulancia);
+
   await sequelize.close();
+}
+
+async function seedInsumos(sequelize, Insumo, Ambulancia) {
+  const countInsumos = await Insumo.count();
+  if (countInsumos > 0) {
+    console.log(`[DB] Insumos ya existen (${countInsumos}), omitiendo seed.`);
+    return;
+  }
+
+  const generarCodigo = async (familia_abrev) => {
+    const [rows] = await sequelize.query(
+      `SELECT valor FROM "ContadorCodigo" WHERE id = 1 FOR UPDATE`
+    );
+    const siguiente = (rows[0]?.valor ?? 0) + 1;
+    await sequelize.query(
+      `UPDATE "ContadorCodigo" SET valor = ${siguiente} WHERE id = 1`
+    );
+    return `INS-${familia_abrev.toUpperCase().slice(0, 5)}-${String(siguiente).padStart(3, '0')}`;
+  };
+
+  // Bodega primero
+  let bodegaCount = 0;
+  for (const p of STOCK_BODEGA) {
+    for (let i = 0; i < p.cantidad; i++) {
+      const codigo = await generarCodigo(p.familia_abrev);
+      await Insumo.create({
+        nombre: p.nombre, familia: p.familia,
+        familia_abrev: p.familia_abrev.toUpperCase(),
+        especificaciones: p.especificaciones,
+        estado: 'activo', cantidad_disponible: 1,
+        ambulanciaId: null,
+        fecha_registro: new Date(),
+        codigo_qr: codigo,
+        codigo,
+      });
+      bodegaCount++;
+    }
+  }
+  console.log(`[DB] ✓ Insumos de bodega creados (${bodegaCount} insumos)`);
+
+  // Por ambulancia AMB-01 a AMB-20
+  for (let i = 1; i <= 20; i++) {
+    const num = String(i).padStart(2, '0');
+    const amb = await Ambulancia.findOne({ where: { codigo: `AMB-${num}` } });
+    if (!amb) continue;
+
+    let ambCount = 0;
+    for (const p of STOCK_AMBULANCIA) {
+      for (let j = 0; j < p.cantidad; j++) {
+        const codigo = await generarCodigo(p.familia_abrev);
+        await Insumo.create({
+          nombre: p.nombre, familia: p.familia,
+          familia_abrev: p.familia_abrev.toUpperCase(),
+          especificaciones: p.especificaciones,
+          estado: 'activo', cantidad_disponible: 1,
+          ambulanciaId: amb.id,
+          fecha_registro: new Date(),
+          codigo_qr: codigo,
+          codigo,
+        });
+        ambCount++;
+      }
+    }
+    console.log(`[DB] ✓ Insumos creados para AMB-${num} (${ambCount} insumos)`);
+  }
 }
 
 async function init() {

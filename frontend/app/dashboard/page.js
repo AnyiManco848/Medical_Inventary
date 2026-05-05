@@ -312,7 +312,7 @@ export default function DashboardPage() {
                   accentBorder={C.greenBorder}
                 />
               </Link>
-              <Link href="/dashboard/inventario" style={{ textDecoration: 'none' }}>
+              <Link href="/dashboard/recoger" style={{ textDecoration: 'none' }}>
                 <CardAccion
                   titulo="Recoger inventario"
                   descripcion="Registrar la recuperación de insumos previamente entregados."
@@ -322,15 +322,16 @@ export default function DashboardPage() {
                   accentBorder={C.tealBorder}
                 />
               </Link>
-              <CardAccion
-                titulo="Reportar daño o pérdida"
-                descripcion="Informar sobre insumos dañados o perdidos durante la operación."
-                icono="⚠️"
-                accentColor={C.amber}
-                accentBg={C.amberLight}
-                accentBorder={C.amberBorder}
-                onClick={() => alert('Módulo en construcción')}
-              />
+              <Link href="/dashboard/dano" style={{ textDecoration: 'none' }}>
+                <CardAccion
+                  titulo="Reportar daño o pérdida"
+                  descripcion="Informar sobre insumos dañados o perdidos durante la operación."
+                  icono="⚠️"
+                  accentColor={C.amber}
+                  accentBg={C.amberLight}
+                  accentBorder={C.amberBorder}
+                />
+              </Link>
             </div>
           </>
         )}

@@ -12,6 +12,7 @@ const ReasignacionAmbulancia = require('./ReasignacionAmbulancia');
 const ContadorCodigo = require('./ContadorCodigo');
 const CentroAsistencial = require('./CentroAsistencial');
 const MovimientoInsumo = require('./MovimientoInsumo');
+const ReporteInsumo = require('./ReporteInsumo');
 
 // --- Asociaciones ---
 
@@ -48,6 +49,11 @@ MovimientoInsumo.belongsTo(CentroAsistencial, { foreignKey: 'centroAsistencialId
 MovimientoInsumo.belongsTo(Ambulancia, { foreignKey: 'ambulanciaId', as: 'ambulancia', constraints: false });
 MovimientoInsumo.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario', constraints: false });
 
+// Reportes de daño/pérdida
+ReporteInsumo.belongsTo(Insumo, { foreignKey: 'insumoId', as: 'insumo', constraints: false });
+ReporteInsumo.belongsTo(Ambulancia, { foreignKey: 'ambulanciaId', as: 'ambulancia', constraints: false });
+ReporteInsumo.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario', constraints: false });
+
 module.exports = {
   sequelize,
   Role,
@@ -62,4 +68,5 @@ module.exports = {
   ContadorCodigo,
   CentroAsistencial,
   MovimientoInsumo,
+  ReporteInsumo,
 };

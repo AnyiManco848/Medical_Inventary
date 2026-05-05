@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const {
   Insumo, BajaInsumo, ReasignacionAmbulancia,
   MovimientoInventario, Ambulancia, sequelize,
@@ -105,16 +106,56 @@ const obtener = async (req, res, next) => {
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
-// GET /api/insumos/buscar/:codigo  — busca por código INS-FAM-###
+// GET /api/insumos/buscar  — ?q= busca por nombre/código (ILIKE), ?codigo= exacto
 // ──────────────────────────────────────────────────────────────────────────────
-const buscarPorCodigo = async (req, res, next) => {
+const buscar = async (req, res, next) => {
   try {
-    const insumo = await Insumo.findOne({
-      where: { codigo: req.params.codigo.toUpperCase() },
-      include: [{ model: Ambulancia, as: 'ambulancia', attributes: ['id', 'codigo', 'descripcion'] }],
-    });
-    if (!insumo) return res.status(404).json({ message: 'No se encontró ningún insumo con ese código' });
-    res.json(formatInsumo(insumo));
+    const { q, codigo } = req.query;
+
+    if (codigo) {
+      const insumo = await Insumo.findOne({
+        where: { codigo: codigo.toUpperCase() },
+        include: [{ model: Ambulancia, as: 'ambulancia', attributes: ['id', 'codigo', 'descripcion'] }],
+      });
+      if (!insumo) return res.status(404).json({ message: 'No se encontró ningún insumo con ese código' });
+      return res.json(formatInsumo(insumo));
+    }
+
+    if (!q || q.trim().length < 2) {
+      return res.json([]);
+    }
+
+    const term = `%${q.trim()}%`;
+
+    // unaccent permite buscar sin importar tildes (ej. "pediatrico" → "Pediátrico")
+    const rows = await sequelize.query(`
+      SELECT i.id, i.codigo, i.nombre, i.familia, i.especificaciones,
+             i."ambulanciaId", i.estado, a.codigo AS "ambulanciaCodigo"
+      FROM "Insumos" i
+      LEFT JOIN "Ambulancias" a ON a.id = i."ambulanciaId"
+      WHERE i.estado = 'activo'
+        AND (
+          unaccent(i.nombre)              ILIKE unaccent(:term)
+          OR unaccent(COALESCE(i.codigo,''))           ILIKE unaccent(:term)
+          OR unaccent(COALESCE(i.familia,''))          ILIKE unaccent(:term)
+          OR unaccent(COALESCE(i.especificaciones,'')) ILIKE unaccent(:term)
+        )
+      ORDER BY i.codigo ASC
+      LIMIT 8
+    `, { replacements: { term }, type: 'SELECT' });
+
+    const insumos = rows.map(r => ({
+      id:              r.id,
+      codigo:          r.codigo,
+      nombre:          r.nombre,
+      familia:         r.familia,
+      especificaciones: r.especificaciones,
+      ambulanciaId:    r.ambulanciaId,
+      estado:          r.estado,
+      ambulancia:      r.ambulanciaCodigo ? { codigo: r.ambulanciaCodigo } : null,
+    }));
+
+    res.json(insumos);
   } catch (error) {
     next(error);
   }
@@ -462,7 +503,7 @@ module.exports = {
   listar,
   listarBajas,
   obtener,
-  buscarPorCodigo,
+  buscar,
   buscarPorQR,
   crear,
   editar,

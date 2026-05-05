@@ -9,6 +9,7 @@ import InsumoSelector from '../_components/InsumoSelector';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
+/* Paleta idéntica a entregar/page.js */
 const C = {
   bg:          '#f0f5f2',
   green:       '#2d8653',
@@ -26,6 +27,9 @@ const C = {
   navBorder:   '#d5e8dc',
 };
 
+/* Color del botón principal — igual que entregar/page.js */
+const BTN = { color: '#2d8653', hover: '#4a9e6e', shadow: 'rgba(45,134,83,0.2)', shadowHover: 'rgba(45,134,83,0.35)', disabled: '#9dc9b3' };
+
 const getHoy = () => new Date().toISOString().split('T')[0];
 const getHoraActual = () => {
   const d = new Date();
@@ -38,7 +42,7 @@ function decodificarJWT(token) {
 }
 
 const labelStyle = { display: 'block', fontSize: '0.8rem', fontWeight: '500', color: C.textMid, marginBottom: '0.4rem' };
-const inputBase  = {
+const inputBase = {
   width: '100%', backgroundColor: C.greenLight, border: `1px solid ${C.greenBorder}`,
   borderRadius: '8px', padding: '0.65rem 0.9rem', color: C.textDark,
   fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', boxSizing: 'border-box',
@@ -53,12 +57,15 @@ const EcgIcon = () => (
   </svg>
 );
 
-export default function EntregarInsumoPage() {
+export default function RecogerPage() {
   const router = useRouter();
-  const [usuario, setUsuario] = useState(null);
-  const [centros,  setCentros]  = useState([]);
+  const [usuario,     setUsuario]     = useState(null);
+  const [centros,     setCentros]     = useState([]);
+  const [ambulancias, setAmbulancias] = useState([]);
 
   const [insumoSeleccionado, setInsumoSeleccionado] = useState(null);
+  const [prefillBanner,      setPrefillBanner]      = useState(false);
+  const [cargandoPrefill,    setCargandoPrefill]    = useState(false);
 
   const [form, setForm] = useState({
     codigoInsumo: '', nombrePaciente: '', historiaClinica: '',
@@ -90,9 +97,43 @@ export default function EntregarInsumoPage() {
     axios.get(`${API}/api/centros-asistenciales`).then(({ data }) => setCentros(data)).catch(() => {});
   }, []);
 
-  const handleInsumoSeleccionado = (ins) => {
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (!token) return;
+    axios.get(`${API}/api/ambulancias/activas`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(({ data }) => setAmbulancias(data))
+      .catch(() => {});
+  }, []);
+
+  const handleInsumoSeleccionado = async (ins) => {
     setInsumoSeleccionado(ins);
-    setForm(f => ({ ...f, codigoInsumo: ins ? (ins.codigo || '') : '' }));
+    setPrefillBanner(false);
+    if (!ins) { setForm(f => ({ ...f, codigoInsumo: '' })); return; }
+    setForm(f => ({ ...f, codigoInsumo: ins.codigo || '' }));
+
+    const token = Cookies.get('token');
+    if (!token || !ins.codigo) return;
+    setCargandoPrefill(true);
+    try {
+      const { data } = await axios.get(`${API}/api/movimientos/ultimo-por-insumo`, {
+        params: { codigo: ins.codigo },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const ult = data.ultimaEntrega;
+      if (ult) {
+        setForm(f => ({
+          ...f,
+          codigoInsumo:        ins.codigo,
+          nombrePaciente:      ult.nombrePaciente      || f.nombrePaciente,
+          historiaClinica:     ult.historiaClinica     || f.historiaClinica,
+          centroAsistencialId: ult.centroAsistencialId ? String(ult.centroAsistencialId) : f.centroAsistencialId,
+          centroOtro:          ult.centroOtro          || f.centroOtro,
+          nombreMedico:        ult.nombreMedico        || f.nombreMedico,
+        }));
+        setPrefillBanner(true);
+      }
+    } catch { /* sin entrega previa */ }
+    finally { setCargandoPrefill(false); }
   };
 
   const handleChange = (e) => {
@@ -117,13 +158,14 @@ export default function EntregarInsumoPage() {
     setGuardando(true);
     try {
       const token = Cookies.get('token');
-      await axios.post(`${API}/api/movimientos/entrega`, form, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(`${API}/api/movimientos/recogida`, form, { headers: { Authorization: `Bearer ${token}` } });
       setExito(true);
       setInsumoSeleccionado(null);
+      setPrefillBanner(false);
       setForm({ codigoInsumo: '', nombrePaciente: '', historiaClinica: '', centroAsistencialId: '', centroOtro: '', fecha: getHoy(), hora: getHoraActual(), tripulacion: '', nombreMedico: '' });
       setTimeout(() => setExito(false), 4000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al registrar la entrega. Intente nuevamente.');
+      setError(err.response?.data?.message || 'Error al registrar la recogida. Intente nuevamente.');
     } finally {
       setGuardando(false);
     }
@@ -159,12 +201,25 @@ export default function EntregarInsumoPage() {
       </header>
 
       <main style={{ padding: '2rem', maxWidth: '680px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '1.35rem', fontWeight: '700', color: C.textDark, marginBottom: '0.25rem' }}>Entregar insumo</h1>
-        <p style={{ color: C.textMid, fontSize: '0.875rem', marginBottom: '1.75rem' }}>Registra la entrega de un insumo médico a un paciente.</p>
+        <h1 style={{ fontSize: '1.35rem', fontWeight: '700', color: C.textDark, marginBottom: '0.25rem' }}>Recoger inventario</h1>
+        <p style={{ color: C.textMid, fontSize: '0.875rem', marginBottom: '1.75rem' }}>Registra la recuperación de un insumo previamente entregado.</p>
 
         {exito && (
           <div style={{ backgroundColor: C.greenLight, border: `1px solid ${C.greenBorder}`, borderRadius: '10px', padding: '0.9rem 1.25rem', marginBottom: '1.5rem', color: C.green, fontWeight: '600', fontSize: '0.9rem' }}>
-            ✓ Insumo registrado exitosamente
+            ✓ Recogida registrada exitosamente
+          </div>
+        )}
+
+        {prefillBanner && (
+          <div style={{ backgroundColor: '#fefce8', border: '1px solid #fde68a', borderRadius: '10px', padding: '0.8rem 1.25rem', marginBottom: '1.5rem', color: '#92400e', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>⚡</span>
+            <span>Datos prellenados desde la última entrega de este insumo. Verifica antes de guardar.</span>
+          </div>
+        )}
+
+        {cargandoPrefill && (
+          <div style={{ backgroundColor: C.greenLight, border: `1px solid ${C.greenBorder}`, borderRadius: '10px', padding: '0.7rem 1.25rem', marginBottom: '1.5rem', color: C.green, fontSize: '0.85rem' }}>
+            Buscando última entrega...
           </div>
         )}
 
@@ -223,8 +278,17 @@ export default function EntregarInsumoPage() {
 
             {/* 7. Tripulación */}
             <div style={{ marginBottom: '1rem' }}>
-              <label style={labelStyle}>Tripulación</label>
-              <input type="text" name="tripulacion" value={form.tripulacion} onChange={handleChange} placeholder="Ej: Juan Pérez, María López" onFocus={onFocus} onBlur={onBlur} style={inputBase} />
+              <label style={labelStyle}>Tripulación (ambulancia)</label>
+              {ambulancias.length > 0 ? (
+                <select name="tripulacion" value={form.tripulacion} onChange={handleChange} onFocus={onFocus} onBlur={onBlur} style={{ ...inputBase, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a6a57' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.9rem center', paddingRight: '2.5rem', cursor: 'pointer' }}>
+                  <option value="">Seleccionar ambulancia...</option>
+                  {ambulancias.map(a => (
+                    <option key={a.id} value={a.codigo}>{a.codigo}{a.descripcion ? ` — ${a.descripcion}` : ''}</option>
+                  ))}
+                </select>
+              ) : (
+                <input type="text" name="tripulacion" value={form.tripulacion} onChange={handleChange} placeholder="Ej: AMB-01" onFocus={onFocus} onBlur={onBlur} style={inputBase} />
+              )}
             </div>
 
             {/* 8. Médico */}
@@ -242,11 +306,11 @@ export default function EntregarInsumoPage() {
             <button
               type="submit"
               disabled={guardando}
-              onMouseEnter={(e) => { if (!guardando) { e.target.style.backgroundColor = C.greenMid; e.target.style.boxShadow = '0 4px 14px rgba(45,134,83,0.35)'; } }}
-              onMouseLeave={(e) => { if (!guardando) { e.target.style.backgroundColor = C.green;    e.target.style.boxShadow = '0 2px 8px rgba(45,134,83,0.2)'; } }}
-              style={{ width: '100%', backgroundColor: guardando ? '#9dc9b3' : C.green, color: '#fff', fontWeight: '600', fontSize: '0.95rem', padding: '0.75rem', borderRadius: '8px', border: 'none', cursor: guardando ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s, box-shadow 0.2s', boxShadow: '0 2px 8px rgba(45,134,83,0.2)' }}
+              onMouseEnter={(e) => { if (!guardando) { e.target.style.backgroundColor = BTN.hover;  e.target.style.boxShadow = `0 4px 14px ${BTN.shadowHover}`; } }}
+              onMouseLeave={(e) => { if (!guardando) { e.target.style.backgroundColor = BTN.color; e.target.style.boxShadow = `0 2px 8px ${BTN.shadow}`; } }}
+              style={{ width: '100%', backgroundColor: guardando ? BTN.disabled : BTN.color, color: '#fff', fontWeight: '600', fontSize: '0.95rem', padding: '0.75rem', borderRadius: '8px', border: 'none', cursor: guardando ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s, box-shadow 0.2s', boxShadow: `0 2px 8px ${BTN.shadow}`, letterSpacing: '0.2px' }}
             >
-              {guardando ? 'Guardando...' : 'Guardar entrega'}
+              {guardando ? 'Guardando...' : 'Registrar recogida'}
             </button>
 
           </form>
