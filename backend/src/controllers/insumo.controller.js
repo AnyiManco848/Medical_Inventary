@@ -107,6 +107,7 @@ const obtener = async (req, res, next) => {
 
 // ──────────────────────────────────────────────────────────────────────────────
 // GET /api/insumos/buscar  — ?q= busca por nombre/código (ILIKE), ?codigo= exacto
+//                            Solo devuelve insumos con ambulancia asignada
 // ──────────────────────────────────────────────────────────────────────────────
 const buscar = async (req, res, next) => {
   try {
@@ -134,6 +135,7 @@ const buscar = async (req, res, next) => {
       FROM "Insumos" i
       LEFT JOIN "Ambulancias" a ON a.id = i."ambulanciaId"
       WHERE i.estado = 'activo'
+        AND i."ambulanciaId" IS NOT NULL
         AND (
           unaccent(i.nombre)              ILIKE unaccent(:term)
           OR unaccent(COALESCE(i.codigo,''))           ILIKE unaccent(:term)
@@ -141,7 +143,7 @@ const buscar = async (req, res, next) => {
           OR unaccent(COALESCE(i.especificaciones,'')) ILIKE unaccent(:term)
         )
       ORDER BY i.codigo ASC
-      LIMIT 8
+      LIMIT 30
     `, { replacements: { term }, type: 'SELECT' });
 
     const insumos = rows.map(r => ({
