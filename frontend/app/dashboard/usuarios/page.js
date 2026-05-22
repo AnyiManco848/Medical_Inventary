@@ -358,6 +358,7 @@ export default function UsuariosPage() {
   const [cargando,     setCargando]     = useState(true);
   const [error,        setError]        = useState('');
   const [modalUsuario, setModalUsuario] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(5);
 
   useEffect(() => {
     const token = Cookies.get('token');
@@ -375,6 +376,7 @@ export default function UsuariosPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsuarios(data);
+      setVisibleCount(5);
     } catch (err) {
       setError(err.response?.data?.message || 'Error al cargar usuarios');
     } finally {
@@ -476,6 +478,7 @@ export default function UsuariosPage() {
           ) : usuarios.length === 0 ? (
             <div style={{ padding: '3rem', textAlign: 'center', color: C.textLight }}>No hay usuarios registrados</div>
           ) : (
+            <>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: C.greenLight, borderBottom: `1px solid ${C.greenBorder}` }}>
@@ -495,9 +498,9 @@ export default function UsuariosPage() {
                 </tr>
               </thead>
               <tbody>
-                {usuarios.map((u, idx) => (
+                {usuarios.slice(0, visibleCount).map((u, idx) => (
                   <tr key={u.id} style={{
-                    borderBottom: idx < usuarios.length - 1 ? `1px solid ${C.greenBorder}40` : 'none',
+                    borderBottom: idx < Math.min(visibleCount, usuarios.length) - 1 ? `1px solid ${C.greenBorder}40` : 'none',
                     transition:   'background-color 0.15s',
                   }}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f7fbf8'; }}
@@ -548,6 +551,17 @@ export default function UsuariosPage() {
                 ))}
               </tbody>
             </table>
+            {visibleCount < usuarios.length && (
+              <div style={{ padding: '1rem 1.5rem', textAlign: 'center', borderTop: `1px solid ${C.greenBorder}` }}>
+                <button
+                  onClick={() => setVisibleCount(v => v + 5)}
+                  style={{ ...btnSecondary, fontSize: '0.85rem', padding: '0.5rem 1.25rem' }}
+                >
+                  Ver más ({usuarios.length - visibleCount} restante{usuarios.length - visibleCount !== 1 ? 's' : ''})
+                </button>
+              </div>
+            )}
+            </>
           )}
         </div>
       </main>
