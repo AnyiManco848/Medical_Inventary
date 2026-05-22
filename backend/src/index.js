@@ -60,6 +60,15 @@ async function iniciar() {
   try {
     await sequelize.authenticate();
     console.log('[DB] Conexión a PostgreSQL establecida correctamente.');
+    if (process.env.AUTO_INIT === 'true') {
+      console.log('[INIT] Ejecutando inicialización automática...');
+      const initDB = require('./config/initDB');
+      await initDB();
+      console.log('[INIT] initDB completado.');
+      const seedAdmin = require('./config/seedAdmin');
+      await seedAdmin();
+      console.log('[INIT] seedAdmin completado.');
+    }
   } catch (error) {
     console.error('[DB] No se pudo conectar a la base de datos:', error.message);
   }
