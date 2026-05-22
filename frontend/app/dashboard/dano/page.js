@@ -64,6 +64,8 @@ export default function DanoPage() {
   const router = useRouter();
   const fileInputRef = useRef(null);
   const [usuario, setUsuario] = useState(null);
+  const [ambulancias, setAmbulancias] = useState([]);
+  const [ambulanciaSeleccionadaId, setAmbulanciaSeleccionadaId] = useState(null);
 
   const [insumoSeleccionado, setInsumoSeleccionado] = useState(null);
   const [tipo,     setTipo]     = useState('dano');
@@ -95,6 +97,14 @@ export default function DanoPage() {
   useEffect(() => {
     return () => { previews.forEach(url => URL.revokeObjectURL(url)); };
   }, [previews]);
+
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (!token) return;
+    axios.get(`${API}/api/ambulancias/activas`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(({ data }) => setAmbulancias(data))
+      .catch(() => {});
+  }, []);
 
   const handleAgregarFotos = (e) => {
     const archivos = Array.from(e.target.files || []);
@@ -136,6 +146,7 @@ export default function DanoPage() {
 
       setExito(true);
       setInsumoSeleccionado(null);
+      setAmbulanciaSeleccionadaId(null);
       setTipo('dano');
       setMotivo('');
       setFecha(getHoy());
@@ -225,11 +236,32 @@ export default function DanoPage() {
             {/* 2. Insumo */}
             <div style={{ marginBottom: '1.5rem' }}>
               <p style={{ ...labelStyle, marginBottom: '0.75rem', fontSize: '0.85rem', fontWeight: '600', color: C.textDark }}>Insumo</p>
+              {ambulancias.length > 0 && (
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <label style={labelStyle}>Ambulancia</label>
+                  <select
+                    value={ambulanciaSeleccionadaId || ''}
+                    onChange={(e) => {
+                      const id = e.target.value ? parseInt(e.target.value, 10) : null;
+                      setAmbulanciaSeleccionadaId(id);
+                    }}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    style={{ ...inputBase, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a6a57' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.9rem center', paddingRight: '2.5rem', cursor: 'pointer' }}
+                  >
+                    <option value="">Seleccionar ambulancia...</option>
+                    {ambulancias.map(a => (
+                      <option key={a.id} value={a.id}>{a.codigo}{a.descripcion ? ` — ${a.descripcion}` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <InsumoSelector
                 accentColor={C.green}
                 accentLight={C.greenLight}
                 accentBorder={C.greenBorder}
                 onInsumoSeleccionado={setInsumoSeleccionado}
+                ambulanciaId={ambulanciaSeleccionadaId}
               />
             </div>
 

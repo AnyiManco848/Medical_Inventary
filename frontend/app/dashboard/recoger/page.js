@@ -62,6 +62,7 @@ export default function RecogerPage() {
   const [usuario,     setUsuario]     = useState(null);
   const [centros,     setCentros]     = useState([]);
   const [ambulancias, setAmbulancias] = useState([]);
+  const [ambulanciaSeleccionadaId, setAmbulanciaSeleccionadaId] = useState(null);
 
   const [insumoSeleccionado, setInsumoSeleccionado] = useState(null);
   const [prefillBanner,      setPrefillBanner]      = useState(false);
@@ -71,7 +72,7 @@ export default function RecogerPage() {
     codigoInsumo: '', nombrePaciente: '', historiaClinica: '',
     centroAsistencialId: '', centroOtro: '',
     fecha: getHoy(), hora: getHoraActual(),
-    tripulacion: '', nombreMedico: '',
+    tripulacion: '', tripulantes: '', nombreMedico: '',
   });
 
   const [guardando, setGuardando] = useState(false);
@@ -141,6 +142,13 @@ export default function RecogerPage() {
     setForm(f => ({ ...f, [name]: value }));
   };
 
+  const handleAmbulanciaChange = (e) => {
+    const codigo = e.target.value;
+    const amb = ambulancias.find(a => a.codigo === codigo);
+    setAmbulanciaSeleccionadaId(amb ? amb.id : null);
+    setForm(f => ({ ...f, tripulacion: codigo }));
+  };
+
   const centroSeleccionado = centros.find(c => String(c.id) === String(form.centroAsistencialId));
   const esOtro = centroSeleccionado?.esOtro === true;
 
@@ -158,11 +166,14 @@ export default function RecogerPage() {
     setGuardando(true);
     try {
       const token = Cookies.get('token');
-      await axios.post(`${API}/api/movimientos/recogida`, form, { headers: { Authorization: `Bearer ${token}` } });
+      const { tripulantes, ...formData } = form;
+      const tripulacionCombinada = [form.tripulacion, tripulantes].filter(Boolean).join(' — ');
+      await axios.post(`${API}/api/movimientos/recogida`, { ...formData, tripulacion: tripulacionCombinada }, { headers: { Authorization: `Bearer ${token}` } });
       setExito(true);
       setInsumoSeleccionado(null);
       setPrefillBanner(false);
-      setForm({ codigoInsumo: '', nombrePaciente: '', historiaClinica: '', centroAsistencialId: '', centroOtro: '', fecha: getHoy(), hora: getHoraActual(), tripulacion: '', nombreMedico: '' });
+      setAmbulanciaSeleccionadaId(null);
+      setForm({ codigoInsumo: '', nombrePaciente: '', historiaClinica: '', centroAsistencialId: '', centroOtro: '', fecha: getHoy(), hora: getHoraActual(), tripulacion: '', tripulantes: '', nombreMedico: '' });
       setTimeout(() => setExito(false), 4000);
     } catch (err) {
       setError(err.response?.data?.message || 'Error al registrar la recogida. Intente nuevamente.');
@@ -234,6 +245,7 @@ export default function RecogerPage() {
                 accentLight={C.greenLight}
                 accentBorder={C.greenBorder}
                 onInsumoSeleccionado={handleInsumoSeleccionado}
+                ambulanciaId={ambulanciaSeleccionadaId}
               />
             </div>
 
@@ -277,10 +289,10 @@ export default function RecogerPage() {
             </div>
 
             {/* 7. Tripulación */}
-            <div style={{ marginBottom: '1rem' }}>
+            <div style={{ marginBottom: '0.5rem' }}>
               <label style={labelStyle}>Tripulación (ambulancia)</label>
               {ambulancias.length > 0 ? (
-                <select name="tripulacion" value={form.tripulacion} onChange={handleChange} onFocus={onFocus} onBlur={onBlur} style={{ ...inputBase, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a6a57' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.9rem center', paddingRight: '2.5rem', cursor: 'pointer' }}>
+                <select name="tripulacion" value={form.tripulacion} onChange={handleAmbulanciaChange} onFocus={onFocus} onBlur={onBlur} style={{ ...inputBase, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a6a57' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.9rem center', paddingRight: '2.5rem', cursor: 'pointer' }}>
                   <option value="">Seleccionar ambulancia...</option>
                   {ambulancias.map(a => (
                     <option key={a.id} value={a.codigo}>{a.codigo}{a.descripcion ? ` — ${a.descripcion}` : ''}</option>
@@ -289,6 +301,9 @@ export default function RecogerPage() {
               ) : (
                 <input type="text" name="tripulacion" value={form.tripulacion} onChange={handleChange} placeholder="Ej: AMB-01" onFocus={onFocus} onBlur={onBlur} style={inputBase} />
               )}
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <input type="text" name="tripulantes" value={form.tripulantes} onChange={handleChange} placeholder="Ej: Juan Pérez, María López" onFocus={onFocus} onBlur={onBlur} style={inputBase} />
             </div>
 
             {/* 8. Médico */}

@@ -273,24 +273,36 @@ export default function DashboardPage() {
                   accentBorder={C.tealBorder}
                 />
               </Link>
-              <CardAccion
-                titulo="Trazabilidad"
-                descripcion="Registros de entrega y recuperación de insumos."
-                icono="📋"
-                accentColor={C.green}
-                accentBg={C.greenLight}
-                accentBorder={C.greenBorder}
-                onClick={() => alert('Módulo en construcción')}
-              />
-              <CardAccion
-                titulo="Ambulancias"
-                descripcion="Gestionar flota de ambulancias activas."
-                icono="🚑"
-                accentColor={C.teal}
-                accentBg={C.tealLight}
-                accentBorder={C.tealBorder}
-                onClick={() => alert('Módulo en construcción')}
-              />
+              <Link href="/dashboard/reportes-admin" style={{ textDecoration: 'none' }}>
+                <CardAccion
+                  titulo="Trazabilidad"
+                  descripcion="Historial de entregas, recuperaciones e insumos pendientes por ambulancia."
+                  icono="📋"
+                  accentColor={C.green}
+                  accentBg={C.greenLight}
+                  accentBorder={C.greenBorder}
+                />
+              </Link>
+              <Link href="/dashboard/ambulancias" style={{ textDecoration: 'none' }}>
+                <CardAccion
+                  titulo="Ambulancias"
+                  descripcion="Gestionar flota de ambulancias activas."
+                  icono="🚑"
+                  accentColor={C.teal}
+                  accentBg={C.tealLight}
+                  accentBorder={C.tealBorder}
+                />
+              </Link>
+              <Link href="/dashboard/centros" style={{ textDecoration: 'none' }}>
+                <CardAccion
+                  titulo="Centros Asistenciales"
+                  descripcion="Gestionar los centros asistenciales registrados en el sistema."
+                  icono="🏥"
+                  accentColor={C.amber}
+                  accentBg={C.amberLight}
+                  accentBorder={C.amberBorder}
+                />
+              </Link>
             </div>
           </>
         )}
@@ -330,6 +342,16 @@ export default function DashboardPage() {
                   accentColor={C.amber}
                   accentBg={C.amberLight}
                   accentBorder={C.amberBorder}
+                />
+              </Link>
+              <Link href="/dashboard/reportes" style={{ textDecoration: 'none' }}>
+                <CardAccion
+                  titulo="Mis entregas"
+                  descripcion="Ver el historial de insumos que has entregado y su estado actual."
+                  icono="📊"
+                  accentColor={C.green}
+                  accentBg={C.greenLight}
+                  accentBorder={C.greenBorder}
                 />
               </Link>
             </div>

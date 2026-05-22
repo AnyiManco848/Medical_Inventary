@@ -977,6 +977,7 @@ export default function InventarioPage() {
   const [busqueda, setBusqueda]       = useState('');
   const [filtroFamilia, setFiltroFamilia] = useState('');
   const [filtroAmb, setFiltroAmb]     = useState('');
+  const [visibleCount, setVisibleCount] = useState(5);
 
   // Estado de modales
   const [modalCrear, setModalCrear]       = useState(false);
@@ -1058,6 +1059,9 @@ export default function InventarioPage() {
 
   // Familias únicas presentes en el inventario
   const familiasPresentes = [...new Set(insumos.map(i => i.familia).filter(Boolean))].sort();
+
+  // Resetear paginación cuando cambia cualquier filtro
+  useEffect(() => { setVisibleCount(5); }, [busqueda, filtroFamilia, filtroAmb]);
 
   if (!usuario) {
     return (
@@ -1160,6 +1164,7 @@ export default function InventarioPage() {
                 : 'No hay insumos activos registrados.'}
             </div>
           ) : (
+            <>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
@@ -1174,7 +1179,7 @@ export default function InventarioPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {insumosFiltrados.map((ins, i) => (
+                  {insumosFiltrados.slice(0, visibleCount).map((ins, i) => (
                     <tr key={ins.id}
                       style={{
                         backgroundColor: i % 2 === 0 ? '#fff' : '#fafcfb',
@@ -1276,6 +1281,14 @@ export default function InventarioPage() {
                 </tbody>
               </table>
             </div>
+            {visibleCount < insumosFiltrados.length && (
+              <div style={{ padding: '1rem 1.5rem', textAlign: 'center', borderTop: `1px solid ${C.greenBorder}` }}>
+                <Btn variant="ghost" size="sm" onClick={() => setVisibleCount(v => v + 5)}>
+                  Ver más ({insumosFiltrados.length - visibleCount} restante{insumosFiltrados.length - visibleCount !== 1 ? 's' : ''})
+                </Btn>
+              </div>
+            )}
+            </>
           )}
         </div>
       </main>

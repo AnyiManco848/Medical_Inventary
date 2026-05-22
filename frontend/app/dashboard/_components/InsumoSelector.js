@@ -6,7 +6,7 @@ import Cookies from 'js-cookie';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-export default function InsumoSelector({ accentColor, accentLight, accentBorder, onInsumoSeleccionado }) {
+export default function InsumoSelector({ accentColor, accentLight, accentBorder, onInsumoSeleccionado, ambulanciaId }) {
   const [tabActiva,          setTabActiva]          = useState('codigo');
   const [query,              setQuery]              = useState('');
   const [sugerencias,        setSugerencias]        = useState([]);
