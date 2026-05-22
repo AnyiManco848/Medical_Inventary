@@ -10,6 +10,8 @@ const usuarioRoutes = require('./routes/usuario.routes');
 const ambulanciaRoutes = require('./routes/ambulancia.routes');
 const insumoRoutes = require('./routes/insumo.routes');
 const movimientosRoutes = require('./routes/movimientos');
+const reportesRoutes = require('./routes/reportes.routes');
+const centrosRoutes = require('./routes/centros.routes');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -32,6 +34,8 @@ app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/ambulancias', ambulanciaRoutes);
 app.use('/api/insumos', insumoRoutes);
 app.use('/api', movimientosRoutes);
+app.use('/api/reportes', reportesRoutes);
+app.use('/api/centros', centrosRoutes);
 
 // Ruta de salud del servidor
 app.get('/api/health', (req, res) => {

@@ -23,6 +23,22 @@ const CentroAsistencial = sequelize.define('CentroAsistencial', {
     type:         DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  direccion: {
+    type:      DataTypes.STRING(300),
+    allowNull: true,
+  },
+  telefono: {
+    type:      DataTypes.STRING(30),
+    allowNull: true,
+  },
+  correo: {
+    type:      DataTypes.STRING(150),
+    allowNull: true,
+  },
+  fechaRegistro: {
+    type:      DataTypes.DATEONLY,
+    allowNull: true,
+  },
 }, {
   tableName:  'CentrosAsistenciales',
   timestamps: false,
