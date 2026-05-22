@@ -6,6 +6,7 @@ const __dirname = dirname(__filename);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   // Fija la raíz del workspace para Turbopack y evita el warning
   // por el package-lock.json en la carpeta padre
   turbopack: {
