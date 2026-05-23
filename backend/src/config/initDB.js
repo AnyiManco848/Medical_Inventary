@@ -191,32 +191,35 @@ async function sincronizarTablas() {
   // ── Seed: CentrosAsistenciales ─────────────────────────────────────────────
   const countCentros = await CentroAsistencial.count();
   if (countCentros === 0) {
+    const hoy = new Date().toISOString().split('T')[0];
     const nombres = [
       'Hospital General de Medellín',
-      'Hospital Universitario San Vicente Fundación',
-      'Clínica CES',
-      'Clínica El Rosario - Sede Centro',
-      'Clínica El Rosario - Sede Tesoro',
-      'Clínica Las Américas',
-      'Clínica León XIII',
-      'Clínica Medellín',
-      'Clínica Oftalmológica de Antioquia',
-      'Clínica Prado',
-      'Clínica Reina Catalina',
-      'Clínica Sagrado Corazón',
-      'Clínica Soma',
       'Hospital Pablo Tobón Uribe',
-      'Hospital Manuel Uribe Ángel (Envigado)',
-      'Clínica Envigado',
-      'Hospital Marco Fidel Suárez (Bello)',
-      'Hospital Venancio Díaz Díaz (Sabaneta)',
-      'ESE Hospital Itagüí',
-      'Clínica Somer (Rionegro, zona de influencia)',
+      'Clínica Las Américas',
+      'Clínica El Rosario',
+      'Clínica Medellín',
+      'IPS Universitaria',
+      'Hospital Universitario San Vicente Fundación',
+      'Clínica Soma',
+      'Clínica CES',
+      'Hospital Mental de Antioquia',
+      'ESE Metrosalud',
+      'Hospital Marco Fidel Suárez',
+      'Clínica Bello Salud',
+      'Hospital del Sur Gabriel Jaime Sierra',
+      'Clínica Bethsaida',
+      'Hospital Manuel Uribe Ángel',
+      'ESE Hospital La María',
+      'Hospital La Estrella ESE',
+      'Hospital Francisco Valderrama',
+      'Hospital Venancio Díaz Díaz',
+      'Hospital San Rafael de Girardota',
+      'Hospital San Vicente de Paúl de Barbosa',
     ];
     const registros = nombres.map(nombre => ({
-      nombre, municipio: 'Valle de Aburrá', activo: true, esOtro: false,
+      nombre, municipio: 'Valle de Aburrá', activo: true, esOtro: false, fechaRegistro: hoy,
     }));
-    registros.push({ nombre: 'Otro', municipio: 'Valle de Aburrá', activo: true, esOtro: true });
+    registros.push({ nombre: 'Otro', municipio: 'Valle de Aburrá', activo: true, esOtro: true, fechaRegistro: hoy });
     await CentroAsistencial.bulkCreate(registros);
     console.log(`[DB] ✓ ${registros.length} centros asistenciales creados.`);
   }

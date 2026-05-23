@@ -11,6 +11,7 @@
     "db:seed-ambulancias": "node src/config/seedAmbuluncias.js",
     "db:seed-stock": "node src/config/seedStock.js",
     "db:seed": "node src/config/seedUsuarios.js",
+    "db:seed-centros": "node src/config/seedCentros.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
