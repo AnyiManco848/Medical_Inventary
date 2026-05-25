@@ -3,6 +3,7 @@ node_modules/
 
 # Variables de entorno
 .env
+.env.local
 
 # Carpeta de uploads
 backend/src/uploads/

@@ -1,206 +1,180 @@
-# Medical Inventary
+# MedicalInventary
 
-Sistema web para la gestión y trazabilidad de insumos médicos entre hospitales y ambulancias.
+Sistema web para la gestión y trazabilidad de insumos médicos en flotas de ambulancias.
 
 ---
 
 ## ¿Qué hace este proyecto?
 
-Medical Inventary es una aplicación fullstack que permite a una organización médica controlar el inventario de insumos (medicamentos, equipos, materiales) que circulan entre sus ambulancias y hospitales.
+MedicalInventary es una aplicación fullstack que permite a una organización médica controlar el inventario de insumos (collarines, vendas, oxígeno, etc.) que circulan entre sus ambulancias y centros asistenciales.
 
 ### Funcionalidades principales
 
 - **Autenticación segura** con JWT y bloqueo automático tras 3 intentos fallidos (cuenta bloqueada 24h).
-- **Control de roles**: el sistema tiene dos tipos de usuarios:
-  - `admin` — gestiona usuarios, insumos, hospitales y ambulancias.
+- **Control de roles** — dos tipos de usuario:
+  - `admin` — gestiona usuarios, insumos, ambulancias y centros asistenciales.
   - `ambulancia` — registra entregas, recuperaciones y reportes de daño o pérdida.
-- **Gestión de usuarios** — crear, editar y desactivar usuarios (soft delete, nunca se eliminan).
-- **Trazabilidad de insumos** — cada insumo tiene un historial de a quién se entregó, cuándo, en qué estado está (entregado / recuperado / perdido / dañado) y si fue recuperado.
-- **Control de stock** — cada insumo tiene un stock actual y un stock mínimo de alerta.
+- **Trazabilidad completa** — cada insumo tiene historial de entregas, recuperaciones y bajas.
+- **Códigos QR** — cada insumo físico tiene un código único (`INS-FAM-###`) y su QR para escaneo rápido.
+- **Reportes** — exportación a PDF y Excel desde el navegador.
 
 ---
 
-## Arquitectura del proyecto
+## Arquitectura
 
 ```
-Medical_Inventary/
-├── backend/          → API REST con Node.js + Express + Sequelize
-└── frontend/         → Interfaz web con Next.js 16 + Tailwind CSS
+MedicalInventary/
+├── backend/    → API REST · Node.js + Express 5 + Sequelize + PostgreSQL
+└── frontend/   → Interfaz web · Next.js 16 + React 19
 ```
 
-El backend expone una API REST en el puerto **4000**.  
-El frontend corre en el puerto **3000** y consume esa API mediante HTTP.
+**Stack tecnológico:**
+
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | Next.js 16 (App Router), React 19, Tailwind CSS 4, Axios, js-cookie |
+| Backend | Node.js, Express 5, Sequelize 6, bcryptjs, jsonwebtoken, multer, qrcode |
+| Base de datos | PostgreSQL 15 |
+| Despliegue | Render.com (backend + frontend) |
 
 ---
 
-## Requisitos previos
+## Requisitos para desarrollo local
 
-| Herramienta       | Versión mínima |
-|-------------------|---------------|
-| Node.js           | 18.x o superior |
-| npm               | 9.x o superior  |
-| SQL Server        | 2017 o superior (o SQL Server Express) |
+| Herramienta | Versión mínima |
+|-------------|---------------|
+| Node.js | 18.x |
+| npm | 9.x |
+| PostgreSQL | 15.x |
 
 ---
 
-## Instalación y ejecución
+## Instalación local
 
-### 1. Configurar variables de entorno
+### 1. Clonar el repositorio
 
-Abre el archivo `backend/.env` y completa los datos de tu SQL Server:
-
-```env
-PORT=4000
-NODE_ENV=development
-
-DB_HOST=localhost
-DB_PORT=1433
-DB_NAME=MedicalInventary
-DB_USER=sa
-DB_PASSWORD=TU_PASSWORD_AQUI
-DB_ENCRYPT=false
-DB_TRUST_CERT=true
-DB_INSTANCE=
-
-JWT_SECRET=medical_inventary_jwt_secret_2024_cambiar_en_produccion
-JWT_EXPIRES_IN=8h
+```bash
+git clone <url-del-repo>
+cd Medical_Inventary
 ```
 
-> Si tu SQL Server usa una instancia con nombre (ej: `SQLEXPRESS`), escribe el nombre en `DB_INSTANCE`.
-
-### 2. Inicializar la base de datos
-
-Este comando crea la base de datos `MedicalInventary`, todas las tablas, los roles y el usuario administrador por defecto.
+### 2. Configurar variables de entorno del backend
 
 ```bash
 cd backend
-npm run db:init
+cp .env.example .env
+# Editar .env con tus credenciales de PostgreSQL local
 ```
 
-Usuario admin creado automáticamente:
-- **Email:** `admin@medical.com`
-- **Contraseña:** `Admin123!`
-
-### 3. Iniciar el backend
+### 3. Configurar variables de entorno del frontend
 
 ```bash
+cd ../frontend
+cp .env.local.example .env.local
+# Si usas el backend local, dejar: NEXT_PUBLIC_API_URL=http://localhost:4000
+```
+
+### 4. Instalar dependencias e inicializar la base de datos
+
+```bash
+# Backend
 cd backend
-npm run dev
+npm install
+npm run db:init         # Crea tablas y roles
+npm run db:seed-admin   # Crea usuario administrador por defecto
+
+# Frontend
+cd ../frontend
+npm install
 ```
 
-El servidor quedará corriendo en: `http://localhost:4000`
-
-### 4. Iniciar el frontend
-
-Abre una segunda terminal:
+### 5. Iniciar en modo desarrollo
 
 ```bash
-cd frontend
-npm run dev
+# Terminal 1 — backend
+cd backend && npm run dev
+
+# Terminal 2 — frontend
+cd frontend && npm run dev
 ```
 
-La aplicación quedará disponible en: `http://localhost:3000`
+- Backend: http://localhost:4000
+- Frontend: http://localhost:3000
 
 ---
 
-## Comandos disponibles
+## Despliegue con Docker (local)
 
-### Backend (`cd backend`)
+```bash
+# En la raíz del proyecto
+cp backend/.env.example backend/.env   # Completar variables
+docker compose up --build
+```
 
-| Comando            | Descripción                                      |
-|--------------------|--------------------------------------------------|
-| `npm run dev`      | Servidor en modo desarrollo con recarga automática |
-| `npm start`        | Servidor en modo producción                       |
-| `npm run db:init`  | Crea la BD, tablas, roles y usuario admin         |
-
-### Frontend (`cd frontend`)
-
-| Comando          | Descripción                            |
-|------------------|----------------------------------------|
-| `npm run dev`    | Servidor Next.js en modo desarrollo    |
-| `npm run build`  | Construir para producción              |
-| `npm start`      | Servir la build de producción          |
+- Frontend: http://localhost:3000
+- Backend: http://localhost:4000
 
 ---
 
-## Cómo se conectan el frontend y el backend
+## Despliegue en Render.com
 
-El frontend (Next.js) y el backend (Express) son dos aplicaciones independientes que se comunican a través de la **API REST** del backend.
+El proyecto está configurado para desplegarse en [Render.com](https://render.com).
 
-### Flujo de comunicación
+### Backend (Web Service)
 
-```
-Navegador (localhost:3000)
-        │
-        │  HTTP Request  (axios)
-        ▼
-API REST (localhost:4000)
-        │
-        │  Sequelize ORM
-        ▼
-SQL Server (localhost:1433)
-```
+1. Crear un **Web Service** en Render apuntando a la carpeta `backend/`.
+2. Render detecta el `Procfile` automáticamente:
+   ```
+   web: node src/config/initDB.js && node src/index.js
+   ```
+3. Configurar las siguientes variables de entorno en el dashboard de Render:
 
-### 1. El frontend hace peticiones HTTP con Axios
+| Variable | Valor |
+|----------|-------|
+| `DATABASE_URL` | Connection string de tu PostgreSQL (desde Render PostgreSQL o externo) |
+| `JWT_SECRET` | Secreto seguro (generar con `openssl rand -hex 32`) |
+| `FRONTEND_URL` | URL pública de tu frontend en Render |
+| `NODE_ENV` | `production` |
+| `JWT_EXPIRES_IN` | `8h` |
 
-Cada vez que la interfaz necesita datos (login, listar usuarios, crear un usuario, etc.), usa `axios` para enviar una petición al backend:
+### Frontend (Web Service)
 
-```js
-// Ejemplo: login
-const { data } = await axios.post('http://localhost:4000/api/auth/login', {
-  email: 'admin@medical.com',
-  password: 'Admin123!',
-});
-```
+1. Crear un **Web Service** en Render apuntando a la carpeta `frontend/`.
+2. Render usa el `Dockerfile` del frontend automáticamente.
+3. Configurar la variable de entorno:
 
-### 2. El backend responde con JSON + Token JWT
+| Variable | Valor |
+|----------|-------|
+| `NEXT_PUBLIC_API_URL` | URL pública de tu backend en Render (ej: `https://medicalinventary-api.onrender.com`) |
 
-El backend procesa la petición, consulta la base de datos y devuelve una respuesta JSON. En el caso del login, devuelve un **token JWT**:
+---
 
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "usuario": {
-    "id": 1,
-    "nombre": "Administrador",
-    "email": "admin@medical.com",
-    "rol": "admin"
-  }
-}
-```
+## Comandos útiles del backend
 
-### 3. El token se guarda en una cookie
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Servidor en modo desarrollo con recarga automática |
+| `npm start` | Servidor en modo producción |
+| `npm run db:init` | Crea tablas y roles en la BD |
+| `npm run db:seed-admin` | Crea usuario administrador por defecto |
+| `npm run db:seed-ambulancias` | Crea las ambulancias iniciales |
+| `npm run db:seed-insumos` | Crea el catálogo inicial de insumos |
+| `npm run db:seed-centros` | Crea los centros asistenciales iniciales |
 
-El frontend guarda el token en una cookie con `js-cookie`:
+---
 
-```js
-Cookies.set('token', data.token, { expires: 1/3 }); // 8 horas
-```
+## Endpoints principales de la API
 
-### 4. Las rutas protegidas envían el token en cada petición
-
-Para las rutas que requieren autenticación (como `/api/usuarios`), el frontend incluye el token en el header `Authorization`:
-
-```js
-const { data } = await axios.get('http://localhost:4000/api/usuarios', {
-  headers: { Authorization: `Bearer ${token}` },
-});
-```
-
-### 5. El backend valida el token antes de responder
-
-El middleware `auth.middleware.js` intercepta la petición, verifica el JWT y, si es válido, permite continuar. Si no lo es, devuelve un error `401 Unauthorized`.
-
-### Endpoints de la API
-
-| Método | Ruta                    | Descripción                    | Protegida |
-|--------|-------------------------|--------------------------------|-----------|
-| POST   | `/api/auth/login`       | Iniciar sesión                 | No        |
-| GET    | `/api/health`           | Estado del servidor            | No        |
-| GET    | `/api/usuarios`         | Listar usuarios con rol        | Admin     |
-| POST   | `/api/usuarios`         | Crear nuevo usuario            | Admin     |
-| PUT    | `/api/usuarios/:id`     | Editar usuario                 | Admin     |
-| DELETE | `/api/usuarios/:id`     | Desactivar usuario (soft delete)| Admin     |
+| Método | Ruta | Protegida | Descripción |
+|--------|------|-----------|-------------|
+| POST | `/api/auth/login` | No | Iniciar sesión |
+| GET | `/api/health` | No | Estado del servidor |
+| GET | `/api/insumos` | JWT | Listar insumos |
+| POST | `/api/movimientos/entrega` | JWT | Registrar entrega de insumo |
+| POST | `/api/movimientos/recogida` | JWT | Registrar recogida de insumo |
+| GET | `/api/reportes/mis-entregas` | JWT + ambulancia | Historial propio |
+| GET | `/api/reportes/admin/historial` | JWT + admin | Trazabilidad completa |
+| GET | `/api/usuarios` | JWT + admin | Listar usuarios |
 
 ---
 
@@ -209,41 +183,21 @@ El middleware `auth.middleware.js` intercepta la petición, verifica el JWT y, s
 ```
 backend/
 ├── src/
-│   ├── config/
-│   │   ├── database.js       → Configuración de Sequelize + SQL Server
-│   │   └── initDB.js         → Script de inicialización de la BD
-│   ├── models/
-│   │   ├── index.js          → Importa modelos y define asociaciones
-│   │   ├── Role.js
-│   │   ├── Usuario.js
-│   │   ├── Ambulancia.js
-│   │   ├── Hospital.js
-│   │   ├── Insumo.js
-│   │   └── Trazabilidad.js
-│   ├── controllers/
-│   │   ├── auth.controller.js
-│   │   └── usuario.controller.js
-│   ├── middlewares/
-│   │   ├── auth.middleware.js   → Verifica JWT
-│   │   └── role.middleware.js   → Verifica rol del usuario
-│   ├── routes/
-│   │   ├── auth.routes.js
-│   │   └── usuario.routes.js
-│   └── index.js                 → Punto de entrada Express
-├── .env                         → Variables de entorno (no subir a git)
-├── .env.example                 → Plantilla de variables de entorno
-└── package.json
+│   ├── config/         → BD, uploads, seeds, initDB
+│   ├── controllers/    → Lógica de negocio (7 controladores)
+│   ├── middlewares/    → auth.middleware.js, role.middleware.js
+│   ├── models/         → Modelos Sequelize (13 modelos)
+│   ├── routes/         → Definición de rutas (7 archivos)
+│   └── index.js        → Punto de entrada Express
+├── uploads/            → Imágenes de insumos y evidencias (gitignored)
+├── .env.example        → Plantilla de variables de entorno
+├── Dockerfile          → Imagen Docker del backend
+└── Procfile            → Comando de inicio para Render
 
 frontend/
 ├── app/
-│   ├── layout.js                → Layout raíz (tema oscuro)
-│   ├── globals.css              → Estilos globales
-│   ├── page.js                  → Redirige a /login
-│   ├── login/
-│   │   └── page.js              → Pantalla de inicio de sesión
-│   └── dashboard/
-│       ├── page.js              → Panel principal según rol
-│       └── usuarios/
-│           └── page.js          → Gestión de usuarios (solo admin)
-└── package.json
+│   ├── login/          → Página de inicio de sesión
+│   └── dashboard/      → Panel principal y sub-páginas por rol
+├── .env.local.example  → Plantilla de variables de entorno
+└── Dockerfile          → Imagen Docker multi-stage (Next.js standalone)
 ```
