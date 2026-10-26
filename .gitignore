@@ -28,3 +28,6 @@ npm-debug.log*
 CLAUDE.md
 claude.md
 .claude/
+# Pruebas
+backend/coverage/
+backend/tests/saturacion/resultados/
