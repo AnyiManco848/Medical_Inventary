@@ -12,7 +12,10 @@
     "db:seed-stock": "node src/config/seedStock.js",
     "db:seed": "node src/config/seedUsuarios.js",
     "db:seed-centros": "node src/config/seedCentros.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:saturacion": "node tests/saturacion/saturacion.js"
   },
   "keywords": [],
   "author": "",
@@ -30,7 +33,11 @@
     "sequelize": "^6.37.8"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@vitest/coverage-v8": "^5.0.5",
+    "autocannon": "^8.0.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.3.1",
+    "vitest": "^5.0.5"
   },
   "description": ""
 }
