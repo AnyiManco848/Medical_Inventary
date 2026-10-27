@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:coverage:sonar": "vitest run --coverage && node scripts/fix-lcov-paths.mjs",
     "test:saturacion": "node tests/saturacion/saturacion.js"
   },
   "keywords": [],
