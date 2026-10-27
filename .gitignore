@@ -1,9 +1,12 @@
 # Dependencias
 node_modules/
 
-# Variables de entorno
+# Variables de entorno: se ignoran todos los archivos reales (.env, .env.local, .env.prod,
+# .env.sonar, ...) en cualquier carpeta, pero NO las plantillas *.example
 .env
-.env.local
+.env.*
+!.env.example
+!.env.*.example
 
 # Carpeta de uploads
 backend/src/uploads/
