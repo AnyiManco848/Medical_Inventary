@@ -34,15 +34,15 @@ const formatInsumo = (insumo) => {
   };
 };
 
-// Incremento atómico del contador global (UPDLOCK evita condiciones de carrera)
+// Incremento atómico del contador global (FOR UPDATE bloquea la fila hasta el commit de la transacción)
 async function siguienteContador(t) {
   const [rows] = await sequelize.query(
-    `SELECT [valor] FROM [ContadorCodigo] WITH (UPDLOCK) WHERE [id] = 1`,
+    `SELECT valor FROM "ContadorCodigo" WHERE id = 1 FOR UPDATE`,
     { transaction: t }
   );
   const siguiente = (rows[0]?.valor ?? 0) + 1;
   await sequelize.query(
-    `UPDATE [ContadorCodigo] SET [valor] = :val WHERE [id] = 1`,
+    `UPDATE "ContadorCodigo" SET valor = :val WHERE id = 1`,
     { replacements: { val: siguiente }, transaction: t }
   );
   return siguiente;
