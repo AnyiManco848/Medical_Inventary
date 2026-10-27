@@ -33,7 +33,38 @@ No requieren base de datos ni archivo `.env`: `tests/setup.js` define las variab
 | `reportes.controller.test.js` | Filtros de reportes y que los valores del usuario viajen como parámetros SQL (no concatenados) |
 | `app.routes.test.js` | Rutas completas por HTTP: 401 sin token, 403 por rol, rutas públicas, flujo login → ruta protegida, errores 500, CORS |
 
-Cobertura al momento de escribir esto: **~91 % de líneas** en controladores, middlewares y `app.js`.
+Cobertura al momento de escribir esto: **~91,6 % de líneas** en `app.js`, controladores, middlewares,
+rutas, modelos y la configuración de multer (`config/upload.js`, `config/uploadEvidencia.js`).
+
+### Cobertura para SonarCloud
+
+La configuración del análisis está en `sonar-project.properties` (raíz del repo). Qué cuenta para la
+cobertura se define en `vitest.config.mjs` (`coverage.include` / `coverage.exclude`) y debe coincidir con
+`sonar.coverage.exclusions`; cada exclusión tiene su motivo comentado en ambos archivos.
+
+1. Generar la cobertura (desde `backend/`):
+
+   ```bash
+   npm run test:coverage:sonar
+   ```
+
+   Corre las pruebas con cobertura y luego `scripts/fix-lcov-paths.mjs`, que reescribe las rutas `SF:` de
+   `coverage/lcov.info` para que queden relativas a la raíz del repo (`backend/src/app.js`, con `/`) y
+   comprueba que cada una existe en disco. Si alguna no existe, termina con código 1.
+
+2. Ejecutar el escáner (desde la **raíz** del repo). El token se pasa como variable de entorno,
+   nunca en un archivo:
+
+   ```bash
+   # macOS / Linux / Git Bash
+   export SONAR_TOKEN=<tu-token>
+   npx @sonar/scan
+
+   # Windows PowerShell
+   $env:SONAR_TOKEN="<tu-token>"; npx @sonar/scan
+   ```
+
+   Antes del primer análisis completa `sonar.projectKey` y `sonar.organization` en `sonar-project.properties`.
 
 ### Bug conocido documentado
 
