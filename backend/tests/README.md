@@ -35,12 +35,13 @@ No requieren base de datos ni archivo `.env`: `tests/setup.js` define las variab
 
 Cobertura al momento de escribir esto: **~91 % de líneas** en controladores, middlewares y `app.js`.
 
-### Bug conocido documentado
+### Bug corregido: contador de códigos
 
-`insumo.controller.js` (`siguienteContador`) usa sintaxis de SQL Server (`[valor]`, `WITH (UPDLOCK)`),
-resto de la migración a PostgreSQL. Contra una base PostgreSQL real, `POST /api/insumos`
-responde **500** (`syntax error at or near "["`). La prueba marcada `it.fails` lo documenta:
-pasa mientras el bug exista y se pondrá en rojo cuando se corrija (entonces cambia `it.fails` por `it`).
+`insumo.controller.js` (`siguienteContador`) usaba sintaxis de SQL Server (`[valor]`, `WITH (UPDLOCK)`),
+resto de la migración a PostgreSQL: contra una base real, `POST /api/insumos` respondía **500**
+(`syntax error at or near "["`). Ahora usa `SELECT ... FOR UPDATE` dentro de la transacción.
+La prueba «el SQL del contador es compatible con PostgreSQL» evita que vuelva a aparecer.
+Pendiente: verificarlo contra un PostgreSQL real (las pruebas simulan Sequelize).
 
 ## 2. Prueba de saturación
 
