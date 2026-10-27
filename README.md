@@ -60,6 +60,10 @@ cd Medical_Inventary
 
 ### 2. Configurar variables de entorno del backend
 
+> Guía completa de variables (qué archivo copiar, cuáles son secretas, cómo comprobar que no falta
+> ninguna y cómo guardar `SONAR_TOKEN`): [docs/ENV.md](docs/ENV.md).
+> En Windows usa `copy` en lugar de `cp`.
+
 ```bash
 cd backend
 cp .env.example .env
