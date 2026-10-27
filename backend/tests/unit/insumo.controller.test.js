@@ -275,12 +275,10 @@ describe('insumo.controller · crear', () => {
     expect(res.status).not.toHaveBeenCalledWith(201);
   });
 
-  // BUG CONOCIDO: el contador usa sintaxis de SQL Server ([valor], WITH (UPDLOCK)),
-  // que PostgreSQL rechaza ("syntax error at or near '['"). En una base real,
-  // POST /api/insumos responde 500. `it.fails` mantiene la suite en verde mientras
-  // el bug exista y se pondrá en rojo cuando se corrija: en ese momento hay que
-  // cambiar `it.fails` por `it`.
-  it.fails('BUG CONOCIDO: el SQL del contador debe ser compatible con PostgreSQL', async () => {
+  // Regresión: el contador usaba sintaxis de SQL Server ([valor], WITH (UPDLOCK)),
+  // que PostgreSQL rechaza ("syntax error at or near '['") y hacía que
+  // POST /api/insumos respondiera 500 contra una base real.
+  it('el SQL del contador es compatible con PostgreSQL', async () => {
     const sqls = simularContador(0);
     simularTransaccion();
     vi.spyOn(Insumo, 'create').mockImplementation(async (d) => ({
