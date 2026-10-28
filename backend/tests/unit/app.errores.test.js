@@ -42,6 +42,15 @@ describe('app.js · manejador global de errores', () => {
     expect(res.body).toEqual({ message: 'Error interno del servidor' });
   });
 
+  it('un error sin propiedad message (p. ej. un objeto rechazado) responde 500 sin romper el manejador', async () => {
+    vi.spyOn(Usuario, 'findAll').mockRejectedValue({ status: 500 });
+
+    const res = await pedirUsuarios();
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ message: 'Error interno del servidor' });
+  });
+
   it('registra el error en consola con el prefijo [ERROR]', async () => {
     vi.spyOn(Usuario, 'findAll').mockRejectedValue(new Error('fallo de prueba'));
 

@@ -328,7 +328,7 @@ export default function DanoPage() {
                     onClick={() => fileInputRef.current?.click()}
                     style={{ width: '100%', padding: '0.75rem', backgroundColor: C.greenLight, color: C.green, border: `1.5px dashed ${C.greenBorder}`, borderRadius: '10px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                   >
-                    📷 {fotos.length === 0 ? 'Agregar fotos' : 'Agregar más fotos'} (JPG, PNG, WEBP · máx. 10 MB c/u)
+                    📷 {fotos.length === 0 ? 'Agregar fotos' : 'Agregar más fotos'} (JPG, PNG, WEBP · máx. 8 MB c/u)
                   </button>
                 </>
               )}

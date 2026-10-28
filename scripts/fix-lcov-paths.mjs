@@ -30,7 +30,7 @@ const paquetes = pedidos.length ? pedidos : Object.keys(PAQUETES);
 // Convierte una ruta del lcov en ruta relativa a la raíz del repo, con "/".
 // Una ruta ya corregida ("backend/src/...") se deja igual.
 function aRutaDelRepo(ruta, paquete) {
-  const normalizada = ruta.replace(/\\/g, '/');
+  const normalizada = ruta.replaceAll('\\', '/');
   let absoluta;
   if (path.isAbsolute(ruta) || path.isAbsolute(normalizada)) {
     absoluta = path.resolve(ruta);
@@ -79,4 +79,5 @@ function corregir(paquete) {
 
 const resultados = paquetes.map(corregir);
 if (resultados.includes(false)) process.exit(1);
-console.log(`[lcov] Todas las rutas existen y están bajo ${paquetes.map((p) => `${PAQUETES[p]}/`).join(' y ')}`);
+const carpetas = paquetes.map((p) => `${PAQUETES[p]}/`).join(' y ');
+console.log(`[lcov] Todas las rutas existen y están bajo ${carpetas}`);

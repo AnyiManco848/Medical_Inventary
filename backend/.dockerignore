@@ -1,0 +1,15 @@
+# Lo que NO entra en la imagen del backend (el Dockerfile hace "COPY . .").
+# Dependencias: la imagen instala las suyas con npm ci (Alpine); las del equipo no sirven allí.
+node_modules/
+# Secretos: las variables llegan al contenedor en tiempo de ejecución, nunca dentro de la imagen.
+.env
+.env.*
+# Fotos subidas por los usuarios: viven en un volumen, no en la imagen.
+uploads/
+# Pruebas y reportes: no se usan en producción.
+tests/
+coverage/
+vitest.config.mjs
+*.log
+Dockerfile
+.dockerignore

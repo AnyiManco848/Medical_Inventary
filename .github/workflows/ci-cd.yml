@@ -1,5 +1,5 @@
 # Pipeline CI/CD de Medical_Inventary: pruebas → build → análisis en SonarQube Cloud
-# (proyecto AnyiManco848, organización anyimanco848). Guía: docs/CI.md
+# (proyecto AnyiManco848_Medical_Inventary, organización anyimanco848). Guía: docs/CI.md
 #
 # Las acciones se fijan por SHA completo del commit (recomendación de GitHub); el comentario
 # indica la versión. Para actualizar, cambia el SHA y el comentario juntos.
@@ -41,12 +41,14 @@ jobs:
             backend/package-lock.json
             frontend/package-lock.json
 
+      # --ignore-scripts: no ejecuta los scripts de instalación de las dependencias (riesgo de cadena
+      # de suministro). Las pruebas y el build no los necesitan.
       - name: Instalar dependencias del backend
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: backend
 
       - name: Instalar dependencias del frontend
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: frontend
 
       # Desde la raíz: pruebas con cobertura de los dos proyectos (falla si baja del 80 %)
@@ -78,9 +80,9 @@ jobs:
       - name: Descargar el código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Las imágenes se construyen antes del npm ci: los Dockerfile hacen "COPY . ." y no hay
-      # .dockerignore, así que un node_modules del runner (Ubuntu) se copiaría encima del de la
-      # imagen (Alpine). Solo se comprueba que compilen: sin push y con tags locales.
+      # Las imágenes se construyen antes del npm ci, con el código recién descargado (el
+      # .dockerignore de cada carpeta además deja fuera node_modules, .env, pruebas y coverage).
+      # Solo se comprueba que compilen: sin push y con tags locales.
       - name: Construir la imagen Docker del backend
         run: docker build --tag medical-inventary-backend:ci backend
 
@@ -98,7 +100,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Instalar dependencias del frontend
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: frontend
 
       - name: Compilar el frontend
