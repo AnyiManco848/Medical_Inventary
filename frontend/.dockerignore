@@ -1,0 +1,14 @@
+# Lo que NO entra en la imagen del frontend (el Dockerfile hace "COPY . .").
+# Dependencias y build: la imagen instala y compila los suyos (Alpine); los del equipo no sirven allí.
+node_modules/
+.next/
+# Secretos: NEXT_PUBLIC_API_URL llega como --build-arg, no desde un archivo .env.
+.env
+.env.*
+# Pruebas y reportes: no se usan en producción.
+tests/
+coverage/
+vitest.config.mjs
+*.log
+Dockerfile
+.dockerignore

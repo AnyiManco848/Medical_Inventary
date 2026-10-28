@@ -30,7 +30,7 @@ const CONFIGS = [
     nombre: 'config/uploadEvidencia.js (evidencias de daño/pérdida)',
     modulo: '../src/config/uploadEvidencia',
     carpeta: path.join('uploads', 'evidencias'),
-    limite: 10 * 1024 * 1024,
+    limite: 8 * 1024 * 1024,
     mensaje: 'Solo se permiten imágenes JPG, PNG o WEBP',
     validos: [
       ['foto.jpg', 'image/jpeg'],

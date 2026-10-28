@@ -132,6 +132,16 @@ Variables opcionales: `SAT_USER`, `SAT_PASS`, `SAT_DURATION` (segundos por etapa
 El detalle de cada corrida queda en `tests/saturacion/resultados/` (no se sube a git).
 Código de salida: `0` cumple, `1` no cumple, `2` no se pudo ejecutar.
 
+### Avisos de SonarQube Cloud que son falsos positivos
+
+SonarQube Cloud marca estos avisos en `tests/saturacion/saturacion.js`. Son intencionales y no se
+corrigen; hay que marcarlos en Sonar como **Falso positivo** (o «Won't fix») con este motivo:
+
+| Regla | Línea | Aviso | Por qué es intencional |
+|-------|-------|-------|------------------------|
+| `javascript:S9382` | `await` dentro de los bucles de `main()` (`ejecutarEtapa` y `sleep`) | «Unexpected `await` inside a loop» | Las etapas de carga **deben** ir una tras otra: cada una mide la API con N conexiones y luego espera 1,5 s a que se vacíe el pool. Correrlas en paralelo (`Promise.all`) sumaría la carga de todas y el resultado no serviría. |
+| `javascript:S3776` | `main()` | «Cognitive Complexity de 17 (máx. 15)» | Es el guion lineal de la prueba (login, escenarios, etapas, resumen y código de salida). Partirlo en más funciones no lo hace más claro y el script no es código de producción: no se despliega ni lo usa la API. |
+
 ### Resultados de la corrida de referencia
 
 Entorno: 2 vCPU compartidas entre el servidor, PostgreSQL 16 y el generador de carga

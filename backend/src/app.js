@@ -3,7 +3,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
+const path = require('node:path');
 
 const authRoutes = require('./routes/auth.routes');
 const usuarioRoutes = require('./routes/usuario.routes');
@@ -14,6 +14,9 @@ const reportesRoutes = require('./routes/reportes.routes');
 const centrosRoutes = require('./routes/centros.routes');
 
 const app = express();
+
+// No anunciar "X-Powered-By: Express": revela el framework y facilita buscar fallos conocidos
+app.disable('x-powered-by');
 
 // --- Middlewares globales ---
 app.use(cors({
@@ -44,12 +47,12 @@ app.get('/api/health', (req, res) => {
 // --- Manejo global de errores ---
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err.message);
-  // Archivo más grande que el límite de multer (5 MB fotos de baja, 10 MB evidencias)
+  // Archivo más grande que el límite de multer (5 MB fotos de baja, 8 MB evidencias)
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({ message: 'El archivo es demasiado grande. Reduce el tamaño de la imagen e inténtalo de nuevo.' });
   }
   // Error de validación de multer (tipo de archivo inválido)
-  if (err.message && err.message.includes('Solo se permiten')) {
+  if (typeof err.message === 'string' && err.message.includes('Solo se permiten')) {
     return res.status(400).json({ message: err.message });
   }
   res.status(err.status || 500).json({

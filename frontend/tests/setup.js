@@ -8,7 +8,10 @@ delete process.env.NEXT_PUBLIC_API_URL;
 
 // jsdom no implementa <canvas>: contexto 2D falso para el fondo animado del login
 const contexto2d = new Proxy({}, {
-  get: (obj, prop) => (prop in obj ? obj[prop] : (obj[prop] = vi.fn())),
+  get: (obj, prop) => {
+    if (!(prop in obj)) obj[prop] = vi.fn();
+    return obj[prop];
+  },
   set: (obj, prop, valor) => { obj[prop] = valor; return true; },
 });
 HTMLCanvasElement.prototype.getContext = function getContext() { return contexto2d; };

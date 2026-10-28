@@ -25,19 +25,19 @@
  *                      → si algún escenario se satura a ese nivel o antes, sale con código 1
  */
 const autocannon = require('autocannon');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const cfg = {
   url: (process.env.SAT_URL || 'http://localhost:4000').replace(/\/$/, ''),
   user: process.env.SAT_USER || 'Administrador01',
   pass: process.env.SAT_PASS || 'Administrador01*',
-  duration: parseInt(process.env.SAT_DURATION, 10) || 8,
+  duration: Number.parseInt(process.env.SAT_DURATION, 10) || 8,
   stages: (process.env.SAT_STAGES || '10,25,50,100,200,400').split(',').map(Number),
   loginStages: (process.env.SAT_LOGIN_STAGES || '2,5,10,25,50').split(',').map(Number),
-  maxErrorPct: parseFloat(process.env.SAT_MAX_ERROR_PCT ?? '1'),
-  maxP99: parseInt(process.env.SAT_MAX_P99_MS, 10) || 2000,
-  targetConn: parseInt(process.env.SAT_TARGET_CONN, 10) || 25, // 20 ambulancias + 2 admins = 22 usuarios + margen
+  maxErrorPct: Number.parseFloat(process.env.SAT_MAX_ERROR_PCT ?? '1'),
+  maxP99: Number.parseInt(process.env.SAT_MAX_P99_MS, 10) || 2000,
+  targetConn: Number.parseInt(process.env.SAT_TARGET_CONN, 10) || 25, // 20 ambulancias + 2 admins = 22 usuarios + margen
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -184,9 +184,10 @@ async function main() {
     const sat = r.puntoSaturacion;
     const cumple = sat === null || sat > cfg.targetConn;
     if (!cumple) falla = true;
+    const textoSat = sat === null ? `no alcanzada hasta ${r.etapas.at(-1).conexiones} conex.` : `${sat} conex.`;
     console.log(
       `${cumple ? '✓' : '✗'} ${r.id.padEnd(9)} máx ${fmt(r.maxRps, 6)} req/s (a ${r.conexionesMaxRps} conex.) · ` +
-      `saturación: ${sat === null ? `no alcanzada hasta ${r.etapas.at(-1).conexiones} conex.` : `${sat} conex.`}`,
+      `saturación: ${textoSat}`,
     );
   }
   console.log(`\nCriterio: soportar ${cfg.targetConn} conexiones concurrentes sin saturarse → ${falla ? 'NO CUMPLE' : 'CUMPLE'}`);

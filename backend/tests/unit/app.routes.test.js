@@ -22,6 +22,12 @@ describe('GET /api/health', () => {
     expect(res.body.status).toBe('ok');
     expect(new Date(res.body.timestamp).toISOString()).toBe(res.body.timestamp);
   });
+
+  it('no envía la cabecera X-Powered-By (no revela que el servidor es Express)', async () => {
+    const res = await request(app).get('/api/health');
+
+    expect(res.headers['x-powered-by']).toBeUndefined();
+  });
 });
 
 describe('Rutas protegidas: sin token → 401', () => {

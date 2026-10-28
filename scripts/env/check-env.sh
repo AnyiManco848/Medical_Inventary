@@ -36,6 +36,7 @@ fi
 leer_env() {
   local -n destino="$1"
   local -n orden="$2"
+  local archivo="$3"
   local linea clave valor
   while IFS= read -r linea || [[ -n "$linea" ]]; do
     linea="${linea%$'\r'}"
@@ -54,7 +55,7 @@ leer_env() {
     fi
     [[ -z "${destino[$clave]+x}" ]] && orden+=("$clave")
     destino["$clave"]="$valor"
-  done < "$3"
+  done < "$archivo"
 }
 
 declare -A actual=() requeridas=()

@@ -3,7 +3,11 @@
 // JWT con la forma real (cabecera.payload.firma) en base64url. Las páginas solo decodifican el
 // payload para decidir qué mostrar; la firma la valida el backend, así que aquí no importa.
 export function crearJWT(payload = {}) {
-  const b64url = (obj) => btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const b64url = (obj) => {
+    let texto = btoa(JSON.stringify(obj)).replaceAll('+', '-').replaceAll('/', '_');
+    while (texto.endsWith('=')) texto = texto.slice(0, -1);
+    return texto;
+  };
   return `${b64url({ alg: 'HS256', typ: 'JWT' })}.${b64url(payload)}.firma`;
 }
 

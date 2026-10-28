@@ -372,7 +372,7 @@ export default function UsuariosPage() {
     if (decoded?.exp && Date.now() / 1000 > decoded.exp) {
       Cookies.remove('token'); Cookies.remove('usuario'); router.push('/login'); return;
     }
-    if (!decoded || decoded.rol !== 'admin') { router.push('/dashboard'); return; }
+    if (decoded?.rol !== 'admin') { router.push('/dashboard'); return; }
     setEsAdmin(true);
   }, [router]);
 
