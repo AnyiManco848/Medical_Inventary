@@ -298,8 +298,9 @@ export default function LoginPage() {
             <form onSubmit={handleLogin}>
               {/* Usuario */}
               <div style={{ marginBottom: '1rem' }}>
-                <label style={labelStyle}>Usuario</label>
+                <label htmlFor="login-usuario" style={labelStyle}>Usuario</label>
                 <input
+                  id="login-usuario"
                   type="text"
                   value={usuario}
                   onChange={(e) => setUsuario(e.target.value)}
@@ -314,9 +315,10 @@ export default function LoginPage() {
 
               {/* Contraseña con mostrar/ocultar */}
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={labelStyle}>Contraseña</label>
+                <label htmlFor="login-password" style={labelStyle}>Contraseña</label>
                 <div style={{ position: 'relative' }}>
                   <input
+                    id="login-password"
                     type={mostrarPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

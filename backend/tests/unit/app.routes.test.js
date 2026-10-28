@@ -95,7 +95,7 @@ describe('Rutas con acceso permitido', () => {
       .set('Authorization', `Bearer ${tokenAdmin()}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(1);
+    expect(res.body).toEqual([{ id: 1, nombre: 'Admin' }]);
   });
 
   it('GET /api/ambulancias/activas está disponible para cualquier usuario autenticado', async () => {
@@ -115,6 +115,7 @@ describe('POST /api/auth/login (flujo completo por HTTP)', () => {
     const res = await request(app).post('/api/auth/login').send({});
 
     expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: 'Usuario y contraseña son requeridos' });
   });
 
   it('200 con credenciales válidas y el token sirve para entrar a una ruta de admin', async () => {
@@ -138,7 +139,8 @@ describe('POST /api/auth/login (flujo completo por HTTP)', () => {
       .send({ numero_ambulancia: 'Administrador01', password: 'Clave123*' });
 
     expect(login.status).toBe(200);
-    expect(login.body.token).toBeTruthy();
+    const payload = cjs('jsonwebtoken').verify(login.body.token, process.env.JWT_SECRET);
+    expect(payload).toMatchObject({ id: 1, numero_ambulancia: 'Administrador01', rol: 'admin' });
     expect(login.body.usuario.rol).toBe('admin');
 
     const protegida = await request(app)

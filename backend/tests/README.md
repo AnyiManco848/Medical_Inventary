@@ -32,9 +32,35 @@ No requieren base de datos ni archivo `.env`: `tests/setup.js` define las variab
 | `ambulancia-centros.controller.test.js` | CRUD de ambulancias y centros asistenciales, reglas de eliminación |
 | `reportes.controller.test.js` | Filtros de reportes y que los valores del usuario viajen como parámetros SQL (no concatenados) |
 | `app.routes.test.js` | Rutas completas por HTTP: 401 sin token, 403 por rol, rutas públicas, flujo login → ruta protegida, errores 500, CORS |
+| `app.errores.test.js` | Manejador de errores de `app.js` (status propio, mensaje por defecto, stack solo en desarrollo, errores de multer) y subida real de un archivo no permitido |
+| `controladores.ramas.test.js` | Ramas restantes de los controladores: validaciones, 404/409, valores por defecto y que los errores inesperados lleguen a `next()` |
+| `upload.config.test.js` | Configuración de multer (`config/upload.js` y `config/uploadEvidencia.js`): límites de tamaño, extensiones y tipos MIME, carpeta destino y nombre de archivo |
+| `database.config.test.js` | `config/database.js` con Sequelize simulado: `DATABASE_URL` (SSL, `DB_SSL_REJECT_UNAUTHORIZED`) o variables `DB_*`, valores por defecto, puerto inválido, logging |
+| `models.test.js` | `models/index.js`: modelos exportados, instancia compartida de Sequelize y cada asociación (tipo, destino y clave foránea) |
 
-Cobertura al momento de escribir esto: **~91,6 % de líneas** en `app.js`, controladores, middlewares,
-rutas, modelos y la configuración de multer (`config/upload.js`, `config/uploadEvidencia.js`).
+Cobertura actual (`npm run test:coverage`): **100 % de líneas, 98,9 % de ramas, 100 % de funciones** en
+`app.js`, controladores, middlewares, rutas, modelos y la configuración de multer y de la base de datos.
+`vitest.config.mjs` exige un mínimo de 80 % en líneas, ramas, funciones y sentencias (`coverage.thresholds`):
+si la cobertura baja de ahí, `npm run test:coverage` falla.
+
+Las 5 ramas sin cubrir no se pueden alcanzar: la rama implícita «sin `else`» que v8 cuenta en `app.js:48`,
+`usuario.controller.js:151` e `insumo.controller.js:472`; la rama de `deleteFile` sin ruta en
+`insumo.controller.js:13`, y en el `catch` de `darDeBaja` (`insumo.controller.js:319`) el caso «sin foto», porque
+la validación ya rechaza antes cualquier petición sin foto.
+
+### Fallos corregidos
+
+Estos errores estaban documentados con `it.fails` y ya se corrigieron; sus pruebas ahora comprueban el
+comportamiento correcto. Hoy no queda ninguna prueba `it.fails`. Si en el futuro se agrega una para
+documentar un fallo, Vitest la cuenta como «expected fail»; cuando se corrija, empezará a pasar, Vitest lo
+marcará como error y habrá que quitarle el `.fails`.
+
+| Fallo | Corrección | Pruebas |
+|-------|-----------|---------|
+| El rol ambulancia podía crear, editar, eliminar, dar de baja y reasignar insumos | `routes/insumo.routes.js`: `verificarRol('admin')` en todas las rutas de escritura (en la baja, antes de multer) | `app.errores.test.js` · control de acceso por rol |
+| Un archivo demasiado grande respondía 500 «File too large» | `app.js`: `LIMIT_FILE_SIZE` → 413 con mensaje en español | `app.errores.test.js` · manejador global |
+| `crearDanoPerdida` dejaba fotos huérfanas al responder 400/404 o fallar | Borra las fotos subidas; un fallo al borrar solo se registra | `controladores.ramas.test.js` |
+| Un `motivo` que no es texto en `darDeBaja` daba 500 | Responde 400 y borra la foto | `controladores.ramas.test.js` |
 
 ### Cobertura para SonarCloud
 
@@ -42,15 +68,19 @@ La configuración del análisis está en `sonar-project.properties` (raíz del r
 cobertura se define en `vitest.config.mjs` (`coverage.include` / `coverage.exclude`) y debe coincidir con
 `sonar.coverage.exclusions`; cada exclusión tiene su motivo comentado en ambos archivos.
 
-1. Generar la cobertura (desde `backend/`):
+1. Generar la cobertura de backend **y** frontend (desde la **raíz** del repo):
 
    ```bash
-   npm run test:coverage:sonar
+   npm run coverage:sonar
    ```
 
-   Corre las pruebas con cobertura y luego `scripts/fix-lcov-paths.mjs`, que reescribe las rutas `SF:` de
-   `coverage/lcov.info` para que queden relativas a la raíz del repo (`backend/src/app.js`, con `/`) y
-   comprueba que cada una existe en disco. Si alguna no existe, termina con código 1.
+   Corre `test:coverage` en `backend/` y en `frontend/` y luego `scripts/fix-lcov-paths.mjs` (en la raíz),
+   que reescribe las rutas `SF:` de `backend/coverage/lcov.info` y `frontend/coverage/lcov.info` para que
+   queden relativas a la raíz del repo (`backend/src/app.js`, `frontend/app/login/page.js`, con `/`) y
+   comprueba que cada una existe en disco y está dentro de `backend/src/` o `frontend/app/`. Si alguna
+   falla, termina con código 1. Es idempotente: `npm run lcov:check` lo vuelve a correr solo como chequeo.
+
+   Solo el backend (desde `backend/`): `npm run test:coverage:sonar`.
 
 2. Ejecutar el escáner (desde la **raíz** del repo). El token se pasa como variable de entorno,
    nunca en un archivo:
@@ -64,7 +94,7 @@ cobertura se define en `vitest.config.mjs` (`coverage.include` / `coverage.exclu
    $env:SONAR_TOKEN="<tu-token>"; npx @sonar/scan
    ```
 
-   Antes del primer análisis completa `sonar.projectKey` y `sonar.organization` en `sonar-project.properties`.
+   `sonar.projectKey` y `sonar.organization` ya están configurados en `sonar-project.properties`.
 
 ### Bug corregido: contador de códigos
 

@@ -44,6 +44,10 @@ app.get('/api/health', (req, res) => {
 // --- Manejo global de errores ---
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err.message);
+  // Archivo más grande que el límite de multer (5 MB fotos de baja, 10 MB evidencias)
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ message: 'El archivo es demasiado grande. Reduce el tamaño de la imagen e inténtalo de nuevo.' });
+  }
   // Error de validación de multer (tipo de archivo inválido)
   if (err.message && err.message.includes('Solo se permiten')) {
     return res.status(400).json({ message: err.message });

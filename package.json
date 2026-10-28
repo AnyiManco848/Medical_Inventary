@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm --prefix backend test && npm --prefix frontend test",
+    "coverage:sonar": "npm --prefix backend run test:coverage && npm --prefix frontend run test:coverage && node scripts/fix-lcov-paths.mjs",
+    "lcov:check": "node scripts/fix-lcov-paths.mjs"
   },
   "keywords": [],
   "author": "",

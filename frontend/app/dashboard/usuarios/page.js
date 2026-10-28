@@ -223,16 +223,17 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {/* Nombre */}
             <div>
-              <label style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>Nombre</label>
-              <input name="nombre" value={form.nombre} onChange={handleChange} required style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
+              <label htmlFor="usuario-nombre" style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>Nombre</label>
+              <input id="usuario-nombre" name="nombre" value={form.nombre} onChange={handleChange} required style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
             </div>
 
             {/* Número de Ambulancia / Usuario */}
             <div>
-              <label style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>
+              <label htmlFor="usuario-numero" style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>
                 Número de Ambulancia / Usuario
               </label>
               <input
+                id="usuario-numero"
                 name="numero_ambulancia"
                 type="text"
                 value={form.numero_ambulancia}
@@ -247,12 +248,13 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
 
             {/* Contraseña con mostrar/ocultar */}
             <div>
-              <label style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>
+              <label htmlFor="usuario-password" style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>
                 Contraseña{' '}
                 {!esNuevo && <span style={{ color: C.textLight, fontWeight: '400' }}>(dejar vacío para no cambiar)</span>}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
+                  id="usuario-password"
                   name="password"
                   type={mostrarPassword ? 'text' : 'password'}
                   value={form.password}
@@ -289,8 +291,8 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
 
             {/* Rol */}
             <div>
-              <label style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>Rol</label>
-              <select name="roleId" value={form.roleId} onChange={handleChange} style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
+              <label htmlFor="usuario-rol" style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>Rol</label>
+              <select id="usuario-rol" name="roleId" value={form.roleId} onChange={handleChange} style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
                 onFocus={handleFocus} onBlur={handleBlur}>
                 {ROLES.map((r) => (
                   <option key={r.id} value={r.id}>{r.nombre}</option>
@@ -301,10 +303,11 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
             {/* Ambulancia — visible solo cuando el rol es "ambulancia" */}
             {parseInt(form.roleId) === 2 && (
               <div>
-                <label style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>
+                <label htmlFor="usuario-ambulancia" style={{ fontSize: '0.8rem', color: C.textMid, fontWeight: '500', display: 'block', marginBottom: '0.3rem' }}>
                   Ambulancia asignada (FK inventario)
                 </label>
                 <select
+                  id="usuario-ambulancia"
                   name="ambulanciaId"
                   value={form.ambulanciaId}
                   onChange={handleChange}
@@ -359,12 +362,18 @@ export default function UsuariosPage() {
   const [error,        setError]        = useState('');
   const [modalUsuario, setModalUsuario] = useState(null);
   const [visibleCount, setVisibleCount] = useState(5);
+  const [esAdmin,      setEsAdmin]      = useState(false);
 
+  // Verifica la sesión y el rol antes de pedir datos: solo un admin carga la lista de usuarios
   useEffect(() => {
     const token = Cookies.get('token');
     if (!token) { router.push('/login'); return; }
     const decoded = decodificarJWT(token);
-    if (!decoded || decoded.rol !== 'admin') { router.push('/dashboard'); }
+    if (decoded?.exp && Date.now() / 1000 > decoded.exp) {
+      Cookies.remove('token'); Cookies.remove('usuario'); router.push('/login'); return;
+    }
+    if (!decoded || decoded.rol !== 'admin') { router.push('/dashboard'); return; }
+    setEsAdmin(true);
   }, [router]);
 
   const cargarUsuarios = useCallback(async () => {
@@ -384,7 +393,7 @@ export default function UsuariosPage() {
     }
   }, []);
 
-  useEffect(() => { cargarUsuarios(); }, [cargarUsuarios]);
+  useEffect(() => { if (esAdmin) cargarUsuarios(); }, [esAdmin, cargarUsuarios]);
 
   const desactivarUsuario = async (id) => {
     if (!confirm('¿Desactivar este usuario?')) return;

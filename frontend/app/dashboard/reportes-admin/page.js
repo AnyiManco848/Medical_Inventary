@@ -200,18 +200,22 @@ function TabHistorial({ token, ambulancias, centros }) {
   ]);
 
   const exportarComoExcel = async () => {
-    setExportando(true);
+    setExportando(true); setError('');
     try {
       await exportarExcel(columnasPDF, filasPDF, 'Historial', 'trazabilidad-historial');
+    } catch {
+      setError('No se pudo generar el archivo Excel. Inténtalo de nuevo.');
     } finally {
       setExportando(false);
     }
   };
 
   const exportarComoPDF = async () => {
-    setExportando(true);
+    setExportando(true); setError('');
     try {
       await exportarPDF('Historial de Trazabilidad', columnasPDF, filasPDF, 'trazabilidad-historial');
+    } catch {
+      setError('No se pudo generar el PDF. Inténtalo de nuevo.');
     } finally {
       setExportando(false);
     }
@@ -419,18 +423,22 @@ function TabPendientes({ token, ambulancias }) {
   ]);
 
   const exportarComoPDF = async () => {
-    setExportando(true);
+    setExportando(true); setError('');
     try {
       await exportarPDF('Insumos Pendientes en Centros Asistenciales', columnasPDF, filasPDF, 'insumos-pendientes');
+    } catch {
+      setError('No se pudo generar el PDF. Inténtalo de nuevo.');
     } finally {
       setExportando(false);
     }
   };
 
   const exportarComoExcel = async () => {
-    setExportando(true);
+    setExportando(true); setError('');
     try {
       await exportarExcel(columnasPDF, filasPDF, 'Pendientes', 'insumos-pendientes');
+    } catch {
+      setError('No se pudo generar el archivo Excel. Inténtalo de nuevo.');
     } finally {
       setExportando(false);
     }

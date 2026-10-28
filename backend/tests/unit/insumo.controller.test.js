@@ -109,7 +109,11 @@ describe('insumo.controller · buscar', () => {
     await ctrl.buscar({ query: { codigo: 'ins-col-001' } }, res, next);
 
     expect(spy.mock.calls[0][0].where).toEqual({ codigo: 'INS-COL-001' });
-    expect(res.json).toHaveBeenCalled();
+    expect(res.json.mock.calls[0][0]).toMatchObject({
+      id: 1,
+      codigo: 'INS-COL-001',
+      fecha_creacion: '05-10-2026',
+    });
   });
 
   it('por código: 404 si no existe', async () => {
@@ -621,7 +625,8 @@ describe('insumo.controller · historial de reasignaciones y endpoints legacy', 
 
     expect(insumo.estado).toBe('dado_de_baja');
     expect(insumo.observaciones).toBe('Roto');
-    expect(insumo.save).toHaveBeenCalled();
+    expect(insumo.save).toHaveBeenCalledTimes(1);
+    expect(res.json.mock.calls[0][0]).toMatchObject({ id: 1, estado: 'dado_de_baja', observaciones: 'Roto' });
   });
 
   it('cambiarEstado: 404 si no existe', async () => {
@@ -649,6 +654,7 @@ describe('insumo.controller · historial de reasignaciones y endpoints legacy', 
     await ctrl.historial({ params: { id: '1' } }, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Insumo no encontrado' });
   });
 
   it('registrarMovimiento: responde 410 (endpoint reemplazado)', async () => {

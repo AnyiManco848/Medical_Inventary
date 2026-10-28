@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const { Insumo, CentroAsistencial, MovimientoInsumo, ReporteInsumo, Usuario } = require('../models');
 
 // GET /api/centros-asistenciales
@@ -151,22 +152,37 @@ const crearRecogida = async (req, res, next) => {
 };
 
 // POST /api/movimientos/dano-perdida  (multipart/form-data, campo fotos[] hasta 5)
+// Carpeta donde config/uploadEvidencia.js guarda las fotos
+const EVIDENCIAS_DIR = path.join(__dirname, '../../uploads/evidencias');
+
+// Borra las fotos que multer ya guardó para una petición que no se completó.
+// Un fallo al borrar solo se registra: no debe ocultar la respuesta ni el error original.
+const borrarFotosSubidas = (files = []) => {
+  for (const f of files) {
+    fs.unlink(f.path || path.join(EVIDENCIAS_DIR, f.filename), (err) => {
+      if (err) console.error('[evidencias] No se pudo borrar', f.filename, err.message);
+    });
+  }
+};
+
 const crearDanoPerdida = async (req, res, next) => {
   const fotosRutas = (req.files || []).map(
     f => `/uploads/evidencias/${f.filename}`
   );
+  const rechazar = (status, message) => {
+    borrarFotosSubidas(req.files);
+    return res.status(status).json({ message });
+  };
   try {
     const { tipo, codigoInsumo, motivo, fecha, hora } = req.body;
 
-    if (!['dano', 'perdida'].includes(tipo)) {
-      return res.status(400).json({ message: 'tipo debe ser "dano" o "perdida"' });
-    }
-    if (!codigoInsumo) return res.status(400).json({ message: 'El código del insumo es requerido' });
-    if (!motivo?.trim()) return res.status(400).json({ message: 'El motivo es requerido' });
+    if (!['dano', 'perdida'].includes(tipo)) return rechazar(400, 'tipo debe ser "dano" o "perdida"');
+    if (!codigoInsumo) return rechazar(400, 'El código del insumo es requerido');
+    if (!motivo?.trim()) return rechazar(400, 'El motivo es requerido');
 
     let insumo = await Insumo.findOne({ where: { codigo: codigoInsumo.toUpperCase() } });
     if (!insumo) insumo = await Insumo.findOne({ where: { codigo_qr: codigoInsumo } });
-    if (!insumo) return res.status(404).json({ message: 'Insumo no encontrado con ese código' });
+    if (!insumo) return rechazar(404, 'Insumo no encontrado con ese código');
 
     const usuarioDb = await Usuario.findByPk(req.usuario.id, { attributes: ['id', 'ambulanciaId'] });
 
@@ -184,6 +200,7 @@ const crearDanoPerdida = async (req, res, next) => {
 
     res.status(201).json({ message: 'Reporte registrado exitosamente', reporte });
   } catch (error) {
+    borrarFotosSubidas(req.files);
     next(error);
   }
 };

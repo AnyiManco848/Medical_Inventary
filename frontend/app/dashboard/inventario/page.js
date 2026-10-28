@@ -178,10 +178,10 @@ function Modal({ children, onClose, width = '520px' }) {
 }
 
 /* ── Campo de formulario ──────────────────────────────────────────────────── */
-function Campo({ label, children, error }) {
+function Campo({ label, htmlFor, children, error }) {
   return (
     <div style={{ marginBottom: '1rem' }}>
-      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600',
+      <label htmlFor={htmlFor} style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600',
         color: C.textMid, marginBottom: '0.35rem' }}>{label}</label>
       {children}
       {error && <p style={{ color: C.red, fontSize: '0.75rem', marginTop: '0.25rem' }}>{error}</p>}
@@ -195,24 +195,24 @@ const inputStyle = {
   outline: 'none', boxSizing: 'border-box', backgroundColor: '#fff',
 };
 
-function Input({ value, onChange, type = 'text', placeholder = '', min, max, readOnly = false }) {
+function Input({ id, value, onChange, type = 'text', placeholder = '', min, max, readOnly = false }) {
   return (
-    <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+    <input id={id} type={type} value={value} onChange={onChange} placeholder={placeholder}
       min={min} max={max} readOnly={readOnly}
       style={{ ...inputStyle, backgroundColor: readOnly ? '#f5f5f5' : '#fff' }} />
   );
 }
 
-function Textarea({ value, onChange, placeholder = '', rows = 3 }) {
+function Textarea({ id, value, onChange, placeholder = '', rows = 3 }) {
   return (
-    <textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows}
+    <textarea id={id} value={value} onChange={onChange} placeholder={placeholder} rows={rows}
       style={{ ...inputStyle, resize: 'vertical' }} />
   );
 }
 
-function SelectField({ value, onChange, children }) {
+function SelectField({ id, value, onChange, children }) {
   return (
-    <select value={value} onChange={onChange}
+    <select id={id} value={value} onChange={onChange}
       style={{ ...inputStyle, cursor: 'pointer' }}>
       {children}
     </select>
@@ -267,12 +267,12 @@ function ModalCrear({ token, ambulancias, onClose, onSaved }) {
         Nuevo insumo
       </h2>
 
-      <Campo label="Nombre del insumo *" error={errores.nombre}>
-        <Input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Collar cervical talla S" />
+      <Campo label="Nombre del insumo *" htmlFor="crear-nombre" error={errores.nombre}>
+        <Input id="crear-nombre" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Collar cervical talla S" />
       </Campo>
 
-      <Campo label="Familia *">
-        <SelectField value={familiaIdx} onChange={e => setFamiliaIdx(Number(e.target.value))}>
+      <Campo label="Familia *" htmlFor="crear-familia">
+        <SelectField id="crear-familia" value={familiaIdx} onChange={e => setFamiliaIdx(Number(e.target.value))}>
           {FAMILIAS.map((f, i) => (
             <option key={f.abrev} value={i}>{f.nombre} ({f.abrev})</option>
           ))}
@@ -282,13 +282,13 @@ function ModalCrear({ token, ambulancias, onClose, onSaved }) {
         </p>
       </Campo>
 
-      <Campo label="Especificaciones">
-        <Input value={especificaciones} onChange={e => setEspec(e.target.value)}
+      <Campo label="Especificaciones" htmlFor="crear-especificaciones">
+        <Input id="crear-especificaciones" value={especificaciones} onChange={e => setEspec(e.target.value)}
           placeholder="Ej: Talla S, 4 pulgadas, adulto..." />
       </Campo>
 
-      <Campo label="Ambulancia asignada">
-        <SelectField value={ambulanciaId} onChange={e => setAmbulanciaId(e.target.value)}>
+      <Campo label="Ambulancia asignada" htmlFor="crear-ambulancia">
+        <SelectField id="crear-ambulancia" value={ambulanciaId} onChange={e => setAmbulanciaId(e.target.value)}>
           <option value="">— Sin ambulancia asignada —</option>
           {ambulancias.map(a => (
             <option key={a.id} value={a.id}>{a.codigo}{a.descripcion ? ` — ${a.descripcion}` : ''}</option>
@@ -370,17 +370,17 @@ function ModalEditar({ insumo, token, ambulancias, onClose, onSaved }) {
         {insumo.codigo || `#${insumo.id}`} · {insumo.familia || '—'}
       </p>
 
-      <Campo label="Nombre *">
-        <Input value={nombre} onChange={e => setNombre(e.target.value)} />
+      <Campo label="Nombre *" htmlFor="editar-nombre">
+        <Input id="editar-nombre" value={nombre} onChange={e => setNombre(e.target.value)} />
       </Campo>
 
-      <Campo label="Especificaciones">
-        <Input value={especificaciones} onChange={e => setEspec(e.target.value)}
+      <Campo label="Especificaciones" htmlFor="editar-especificaciones">
+        <Input id="editar-especificaciones" value={especificaciones} onChange={e => setEspec(e.target.value)}
           placeholder="Talla, tamaño, modelo..." />
       </Campo>
 
-      <Campo label="Ambulancia asignada">
-        <SelectField value={ambulanciaId} onChange={e => setAmbulanciaId(e.target.value)}>
+      <Campo label="Ambulancia asignada" htmlFor="editar-ambulancia">
+        <SelectField id="editar-ambulancia" value={ambulanciaId} onChange={e => setAmbulanciaId(e.target.value)}>
           <option value="">— Sin ambulancia —</option>
           {ambulancias.map(a => (
             <option key={a.id} value={a.id}>{a.codigo}{a.descripcion ? ` — ${a.descripcion}` : ''}</option>
@@ -388,8 +388,8 @@ function ModalEditar({ insumo, token, ambulancias, onClose, onSaved }) {
         </SelectField>
       </Campo>
 
-      <Campo label="Observaciones">
-        <Textarea value={observaciones} onChange={e => setObs(e.target.value)} placeholder="Notas opcionales..." />
+      <Campo label="Observaciones" htmlFor="editar-observaciones">
+        <Textarea id="editar-observaciones" value={observaciones} onChange={e => setObs(e.target.value)} placeholder="Notas opcionales..." />
       </Campo>
 
       {error && <p style={{ color: C.red, fontSize: '0.82rem', marginBottom: '1rem' }}>{error}</p>}
@@ -455,13 +455,13 @@ function ModalBaja({ insumo, token, onClose, onSaved }) {
         )}
       </p>
 
-      <Campo label="Motivo de baja *">
-        <Textarea value={motivo} onChange={e => setMotivo(e.target.value)} rows={3}
+      <Campo label="Motivo de baja *" htmlFor="baja-motivo">
+        <Textarea id="baja-motivo" value={motivo} onChange={e => setMotivo(e.target.value)} rows={3}
           placeholder="Ej: Material vencido, daño físico irrecuperable..." />
       </Campo>
 
-      <Campo label="Foto de evidencia *">
-        <input type="file" accept=".jpg,.jpeg,.png" onChange={elegirFoto}
+      <Campo label="Foto de evidencia *" htmlFor="baja-foto">
+        <input id="baja-foto" type="file" accept=".jpg,.jpeg,.png" onChange={elegirFoto}
           style={{ fontSize: '0.85rem', color: C.textDark }} />
         {preview && (
           <img src={preview} alt="Evidencia" style={{
@@ -538,8 +538,8 @@ function ModalReasignar({ insumo, token, ambulancias, onClose, onSaved }) {
         Ambulancia actual: <strong>{ambAnterior}</strong>
       </div>
 
-      <Campo label="Ambulancia destino">
-        <SelectField value={ambulanciaId} onChange={e => setAmbulanciaId(e.target.value)}>
+      <Campo label="Ambulancia destino" htmlFor="reasignar-ambulancia">
+        <SelectField id="reasignar-ambulancia" value={ambulanciaId} onChange={e => setAmbulanciaId(e.target.value)}>
           <option value="">— Sin ambulancia (retirar) —</option>
           {ambulancias.map(a => (
             <option key={a.id} value={a.id}>{a.codigo}{a.descripcion ? ` — ${a.descripcion}` : ''}</option>
@@ -565,13 +565,13 @@ function ModalReasignar({ insumo, token, ambulancias, onClose, onSaved }) {
       </Campo>
 
       {tipo === 'prestamo' && (
-        <Campo label="Fecha de devolución esperada *">
-          <Input type="date" value={fechaDev} onChange={e => setFechaDev(e.target.value)} />
+        <Campo label="Fecha de devolución esperada *" htmlFor="reasignar-fecha">
+          <Input id="reasignar-fecha" type="date" value={fechaDev} onChange={e => setFechaDev(e.target.value)} />
         </Campo>
       )}
 
-      <Campo label="Notas">
-        <Textarea value={notas} onChange={e => setNotas(e.target.value)} rows={2}
+      <Campo label="Notas" htmlFor="reasignar-notas">
+        <Textarea id="reasignar-notas" value={notas} onChange={e => setNotas(e.target.value)} rows={2}
           placeholder="Motivo del traslado, detalles..." />
       </Campo>
 
@@ -786,8 +786,8 @@ function ModalBuscar({ token, onClose, onEncontrado }) {
 
       {modo === 'manual' && (
         <div>
-          <Campo label="Código del insumo" error={errorMsg}>
-            <Input value={codigo} onChange={e => setCodigo(e.target.value)}
+          <Campo label="Código del insumo" htmlFor="buscar-codigo" error={errorMsg}>
+            <Input id="buscar-codigo" value={codigo} onChange={e => setCodigo(e.target.value)}
               placeholder="INS-COL-001" />
           </Campo>
           <p style={{ fontSize: '0.75rem', color: C.textLight, marginBottom: '1rem' }}>
@@ -820,15 +820,23 @@ function ModalBuscar({ token, onClose, onEncontrado }) {
 }
 
 /* ── Modal resultado de búsqueda ──────────────────────────────────────────── */
-function ModalResultadoBusqueda({ insumo: ini, token, ambulancias, onClose, onRefresh }) {
+function ModalResultadoBusqueda({ insumo: ini, token, ambulancias, esAdmin, onClose, onRefresh }) {
   const [insumo, setInsumo]   = useState(ini);
   const [accion, setAccion]   = useState(null); // 'editar' | 'reasignar' | 'baja'
+  const [error, setError]     = useState('');
 
+  // Se llama después de guardar un cambio: la tabla se recarga igual, aunque falle la consulta del insumo
   const recargar = async () => {
-    const res = await axios.get(`${API}/api/insumos/${insumo.id}`, { headers: authHeader(token) });
-    setInsumo(res.data);
-    onRefresh();
-    setAccion(null);
+    setError('');
+    try {
+      const res = await axios.get(`${API}/api/insumos/${insumo.id}`, { headers: authHeader(token) });
+      setInsumo(res.data);
+    } catch {
+      setError('El cambio se guardó, pero no se pudo actualizar la información del insumo. Cierra y vuelve a buscarlo.');
+    } finally {
+      onRefresh();
+      setAccion(null);
+    }
   };
 
   if (accion === 'editar')
@@ -866,7 +874,9 @@ function ModalResultadoBusqueda({ insumo: ini, token, ambulancias, onClose, onRe
           </p>
         </div>
       </div>
-      {insumo.estado === 'activo' && (
+      {error && <p style={{ color: C.red, fontSize: '0.82rem', marginBottom: '1rem' }}>{error}</p>}
+      {/* Igual que en la tabla: solo admin gestiona insumos */}
+      {esAdmin && insumo.estado === 'activo' && (
         <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
           <Btn variant="ghost" size="sm" onClick={() => setAccion('editar')}>✏️ Editar</Btn>
           <Btn variant="secondary" size="sm" onClick={() => setAccion('reasignar')}>🚑 Reasignar</Btn>
@@ -1320,6 +1330,7 @@ export default function InventarioPage() {
       )}
       {resultadoBusqueda && (
         <ModalResultadoBusqueda insumo={resultadoBusqueda} token={token} ambulancias={ambulancias}
+          esAdmin={usuario.rol === 'admin'}
           onClose={() => setResultadoBusqueda(null)}
           onRefresh={() => cargarInsumos(token)} />
       )}

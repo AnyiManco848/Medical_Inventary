@@ -6,6 +6,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
 import InsumoSelector from '../_components/InsumoSelector';
+import { getHoy, getHoraActual } from '../_lib/fechas';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -30,11 +31,6 @@ const C = {
 /* Color del botón principal — igual que entregar/page.js */
 const BTN = { color: '#2d8653', hover: '#4a9e6e', shadow: 'rgba(45,134,83,0.2)', shadowHover: 'rgba(45,134,83,0.35)', disabled: '#9dc9b3' };
 
-const getHoy = () => new Date().toISOString().split('T')[0];
-const getHoraActual = () => {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-};
 
 function decodificarJWT(token) {
   try { return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); }
