@@ -1,5 +1,5 @@
 # Pipeline CI/CD de Medical_Inventary: pruebas → build → análisis en SonarQube Cloud
-# (proyecto AnyiManco848_Medical_Inventary, organización anyimanco848). Guía: docs/CI.md
+# (proyecto AnyiManco848_Medical_Inventary2, organización anyimanco848). Guía: docs/CI.md
 #
 # Las acciones se fijan por SHA completo del commit (recomendación de GitHub); el comentario
 # indica la versión. Para actualizar, cambia el SHA y el comentario juntos.
