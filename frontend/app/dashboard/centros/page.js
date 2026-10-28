@@ -45,13 +45,6 @@ function formatFecha(f) {
   return f;
 }
 
-const EcgIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-    <polyline points="1,16 6,16 9,8 12,24 15,12 18,20 21,16 31,16"
-      stroke="#2d8653" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-  </svg>
-);
-
 function Btn({ children, onClick, variant = 'primary', size = 'sm', disabled = false, type = 'button', style: extra = {} }) {
   const V = {
     primary:   { bg: C.green,      color: '#fff',     border: C.green       },
@@ -90,10 +83,10 @@ function Modal({ children, onClose, width = '520px' }) {
   );
 }
 
-function Campo({ label, children, error }) {
+function Campo({ label, htmlFor, children, error }) {
   return (
     <div style={{ marginBottom: '1rem' }}>
-      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600',
+      <label htmlFor={htmlFor} style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600',
         color: C.textMid, marginBottom: '0.35rem' }}>{label}</label>
       {children}
       {error && <p style={{ color: C.red, fontSize: '0.75rem', marginTop: '0.25rem' }}>{error}</p>}
@@ -157,20 +150,20 @@ function ModalCentro({ centro, token, onClose, onSaved }) {
       )}
 
       <form onSubmit={guardar}>
-        <Campo label="Nombre *" error={errores.nombre}>
-          <input value={form.nombre} onChange={set('nombre')}
+        <Campo label="Nombre *" htmlFor="centro-nombre" error={errores.nombre}>
+          <input id="centro-nombre" value={form.nombre} onChange={set('nombre')}
             placeholder="Ej: Hospital General de Medellín" style={inputStyle} />
         </Campo>
-        <Campo label="Dirección">
-          <input value={form.direccion} onChange={set('direccion')}
+        <Campo label="Dirección" htmlFor="centro-direccion">
+          <input id="centro-direccion" value={form.direccion} onChange={set('direccion')}
             placeholder="Ej: Calle 24 # 29-35, El Centro" style={inputStyle} />
         </Campo>
-        <Campo label="Teléfono">
-          <input value={form.telefono} onChange={set('telefono')}
+        <Campo label="Teléfono" htmlFor="centro-telefono">
+          <input id="centro-telefono" value={form.telefono} onChange={set('telefono')}
             placeholder="Ej: 604 444 5555" style={inputStyle} />
         </Campo>
-        <Campo label="Correo electrónico">
-          <input type="email" value={form.correo} onChange={set('correo')}
+        <Campo label="Correo electrónico" htmlFor="centro-correo">
+          <input id="centro-correo" type="email" value={form.correo} onChange={set('correo')}
             placeholder="contacto@hospital.com" style={inputStyle} />
         </Campo>
 

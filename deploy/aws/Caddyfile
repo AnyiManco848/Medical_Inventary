@@ -1,0 +1,36 @@
+# Proxy HTTPS de MedicalInventary (EC2 + Docker Compose).
+# Caddy obtiene y renueva solo el certificado de Let's Encrypt para {$DOMAIN}
+# (requiere que el DNS apunte a la EC2 y que los puertos 80 y 443 estén abiertos).
+#
+#   https://<DOMAIN>/api/*      -> backend:4000
+#   https://<DOMAIN>/uploads/*  -> backend:4000
+#   https://<DOMAIN>/*          -> frontend:3000
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Fotos de evidencias (hasta 10 MB cada una) con margen
+	request_body {
+		max_size 25MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	@backend path /api/* /uploads/*
+	handle @backend {
+		reverse_proxy backend:4000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

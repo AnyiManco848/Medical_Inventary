@@ -95,18 +95,22 @@ describe('ambulancia.controller · editar / toggle / eliminar', () => {
     await ambulancias.editar({ params: { id: '1' }, body: {} }, res, vi.fn());
 
     expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Ambulancia no encontrada' });
   });
 
   it('editar: 409 si el nuevo código ya lo usa otra ambulancia', async () => {
     const res = crearRes();
-    vi.spyOn(Ambulancia, 'findByPk').mockResolvedValue({
-      codigo: 'AMB-01', placa: 'AAA111', save: vi.fn(),
-    });
-    vi.spyOn(Ambulancia, 'findOne').mockResolvedValue({ id: 9 });
+    const amb = { codigo: 'AMB-01', placa: 'AAA111', save: vi.fn() };
+    vi.spyOn(Ambulancia, 'findByPk').mockResolvedValue(amb);
+    const findOne = vi.spyOn(Ambulancia, 'findOne').mockResolvedValue({ id: 9 });
 
-    await ambulancias.editar({ params: { id: '1' }, body: { codigo: 'AMB-09' } }, res, vi.fn());
+    await ambulancias.editar({ params: { id: '1' }, body: { codigo: ' AMB-09 ' } }, res, vi.fn());
 
+    expect(findOne).toHaveBeenCalledWith({ where: { codigo: 'AMB-09' } });
     expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Ya existe una ambulancia con ese código' });
+    expect(amb.codigo).toBe('AMB-01');
+    expect(amb.save).not.toHaveBeenCalled();
   });
 
   it('editar: guarda cambios válidos', async () => {
@@ -123,7 +127,8 @@ describe('ambulancia.controller · editar / toggle / eliminar', () => {
 
     expect(amb.placa).toBe('BBB222');
     expect(amb.descripcion).toBe('Nueva');
-    expect(amb.save).toHaveBeenCalled();
+    expect(amb.save).toHaveBeenCalledTimes(1);
+    expect(res.json).toHaveBeenCalledWith(amb);
   });
 
   it('toggleActiva invierte el estado', async () => {
@@ -134,7 +139,8 @@ describe('ambulancia.controller · editar / toggle / eliminar', () => {
     await ambulancias.toggleActiva({ params: { id: '1' } }, res, vi.fn());
 
     expect(amb.activa).toBe(false);
-    expect(amb.save).toHaveBeenCalled();
+    expect(amb.save).toHaveBeenCalledTimes(1);
+    expect(res.json).toHaveBeenCalledWith(amb);
   });
 
   it('eliminar: 409 si tiene movimientos registrados', async () => {
@@ -158,7 +164,7 @@ describe('ambulancia.controller · editar / toggle / eliminar', () => {
 
     await ambulancias.eliminar({ params: { id: '1' } }, res, vi.fn());
 
-    expect(amb.destroy).toHaveBeenCalled();
+    expect(amb.destroy).toHaveBeenCalledTimes(1);
     expect(res.json).toHaveBeenCalledWith({ message: 'Ambulancia eliminada correctamente' });
   });
 });
@@ -176,10 +182,13 @@ describe('centros.controller', () => {
   it('crear: 409 si el nombre ya existe', async () => {
     const res = crearRes();
     vi.spyOn(CentroAsistencial, 'findOne').mockResolvedValue({ id: 1 });
+    const create = vi.spyOn(CentroAsistencial, 'create');
 
     await centros.crear({ body: { nombre: 'Hospital A' } }, res, vi.fn());
 
     expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Ya existe un centro con ese nombre.' });
+    expect(create).not.toHaveBeenCalled();
   });
 
   it('crear: 201 con municipio por defecto "Valle de Aburrá" y activo', async () => {
@@ -206,6 +215,7 @@ describe('centros.controller', () => {
     await centros.editar({ params: { id: '1' }, body: { nombre: 'X' } }, res, vi.fn());
 
     expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Centro no encontrado.' });
   });
 
   it('toggleActivo invierte el estado del centro', async () => {
@@ -216,6 +226,7 @@ describe('centros.controller', () => {
     await centros.toggleActivo({ params: { id: '1' } }, res, vi.fn());
 
     expect(centro.update).toHaveBeenCalledWith({ activo: false });
+    expect(res.json).toHaveBeenCalledWith(centro);
   });
 
   it('eliminar: 409 con plural correcto si tiene varios movimientos', async () => {
@@ -251,7 +262,7 @@ describe('centros.controller', () => {
 
     await centros.eliminar({ params: { id: '1' } }, res, vi.fn());
 
-    expect(centro.destroy).toHaveBeenCalled();
+    expect(centro.destroy).toHaveBeenCalledTimes(1);
     expect(res.json).toHaveBeenCalledWith({ message: 'Centro eliminado.' });
   });
 });

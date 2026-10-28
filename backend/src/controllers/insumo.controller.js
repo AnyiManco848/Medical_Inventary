@@ -272,7 +272,7 @@ const darDeBaja = async (req, res, next) => {
   try {
     const { motivo } = req.body;
 
-    if (!motivo?.trim()) {
+    if (typeof motivo !== 'string' || !motivo.trim()) {
       if (req.file) deleteFile(toPublicPath(req.file.filename));
       return res.status(400).json({ message: 'El motivo de baja es requerido' });
     }

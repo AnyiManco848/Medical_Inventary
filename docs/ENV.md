@@ -74,6 +74,7 @@ Alternativa solo para una ventana: copia `.env.sonar.example` como `.env.sonar`,
 | `NODE_ENV` | `backend/src/app.js`, `config/database.js`, `index.js` | No | sin valor (se trata como desarrollo) | Backend local, producción |
 | `FRONTEND_URL` | `backend/src/app.js` (CORS) | No | `http://localhost:3000` | Backend local, producción |
 | `DATABASE_URL` | `backend/src/config/database.js`, `initDB.js` | **Sí** | — | Backend en la nube |
+| `DB_SSL_REJECT_UNAUTHORIZED` | `backend/src/config/database.js` (solo con `DATABASE_URL`) | No | `false` (cifra pero **no verifica** el certificado del servidor) | Backend en la nube. `true` verifica el certificado SSL |
 | `DB_HOST` / `DB_PORT` / `DB_NAME` | `config/database.js`, `initDB.js`, `seedInsumos.js` | No | `localhost` / `5432` / `MedicalInventary` | Backend local, producción Docker |
 | `DB_USER` | Ídem, `docker-compose.yml` | No | — | Backend local, Docker |
 | `DB_PASSWORD` | Ídem, `docker-compose.yml` | **Sí** | — | Backend local, Docker |

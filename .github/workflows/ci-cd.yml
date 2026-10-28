@@ -1,0 +1,158 @@
+# Pipeline CI/CD de Medical_Inventary: pruebas → build → análisis en SonarQube Cloud
+# (proyecto AnyiManco848, organización anyimanco848). Guía: docs/CI.md
+#
+# Las acciones se fijan por SHA completo del commit (recomendación de GitHub); el comentario
+# indica la versión. Para actualizar, cambia el SHA y el comentario juntos.
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Solo lectura del código. Los artefactos y el análisis de Sonar no necesitan más permisos.
+permissions:
+  contents: read
+
+# En un PR, una corrida nueva cancela la anterior que siga en curso. En push a main no se cancela:
+# dos merges seguidos se analizan los dos (el segundo espera a que termine el primero).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Vitest 5 y jsdom 30 exigen Node ^22.22 / ^24.15.
+      - name: Instalar Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Instalar dependencias del backend
+        run: npm ci
+        working-directory: backend
+
+      - name: Instalar dependencias del frontend
+        run: npm ci
+        working-directory: frontend
+
+      # Desde la raíz: pruebas con cobertura de los dos proyectos (falla si baja del 80 %)
+      # y corrección y validación de las rutas SF: de los dos lcov.info.
+      - name: Pruebas con cobertura
+        run: npm run coverage:sonar
+
+      # El job de Sonar usa estos reportes en vez de repetir las pruebas.
+      - name: Guardar los reportes de cobertura
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cobertura
+          path: |
+            backend/coverage/
+            frontend/coverage/
+          retention-days: 7
+          if-no-files-found: warn
+
+  build:
+    name: 🏗 Build Check
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 25
+    # Valor de prueba solo para compilar; no apunta a ningún servidor real.
+    env:
+      NEXT_PUBLIC_API_URL: https://api.example.com
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Las imágenes se construyen antes del npm ci: los Dockerfile hacen "COPY . ." y no hay
+      # .dockerignore, así que un node_modules del runner (Ubuntu) se copiaría encima del de la
+      # imagen (Alpine). Solo se comprueba que compilen: sin push y con tags locales.
+      - name: Construir la imagen Docker del backend
+        run: docker build --tag medical-inventary-backend:ci backend
+
+      - name: Construir la imagen Docker del frontend
+        run: >-
+          docker build --tag medical-inventary-frontend:ci
+          --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL"
+          frontend
+
+      - name: Instalar Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias del frontend
+        run: npm ci
+        working-directory: frontend
+
+      - name: Compilar el frontend
+        run: npm run build
+        working-directory: frontend
+
+  sonar:
+    name: 🔎 Sonar Analysis
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 15
+    # En push a main, siempre. En PR, solo si viene del mismo repositorio: los PR desde un fork
+    # no reciben secretos, así que el job se omite (sin fallar).
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      # Los secretos no se pueden usar directamente en un `if`; se pasan a env y se comprueba si
+      # están vacíos. GitHub enmascara el valor en los registros.
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Comprobar el secreto SONAR_TOKEN
+        id: token
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "::notice title=Sonar omitido::El secreto SONAR_TOKEN no está configurado; se omite el análisis."
+            echo "disponible=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "disponible=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Historial completo: Sonar lo usa para atribuir cada línea (blame) y detectar código nuevo.
+      - name: Descargar el código
+        if: steps.token.outputs.disponible == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # Restaura backend/coverage/ y frontend/coverage/ del job test (no se repiten las pruebas).
+      - name: Descargar los reportes de cobertura
+        if: steps.token.outputs.disponible == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: cobertura
+          path: .
+
+      # push a main: sin sonar.branch.name → el análisis va a la rama principal del proyecto
+      # en Sonar ("main"). En un PR, el escáner detecta solo el número de PR, la rama y la base.
+      # sonar.qualitygate.wait: desactivado por defecto. Para que el pipeline falle si no pasa el
+      # Quality Gate, crea la variable de repositorio SONAR_QUALITYGATE_WAIT = true (ver docs/CI.md).
+      - name: Analizar con SonarQube Cloud
+        if: steps.token.outputs.disponible == 'true'
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        with:
+          args: >-
+            -Dsonar.qualitygate.wait=${{ vars.SONAR_QUALITYGATE_WAIT == 'true' }}
+            -Dsonar.qualitygate.timeout=300

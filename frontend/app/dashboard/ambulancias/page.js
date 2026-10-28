@@ -85,10 +85,10 @@ function Modal({ children, onClose, width = '480px' }) {
   );
 }
 
-function Campo({ label, children, error, hint }) {
+function Campo({ label, htmlFor, children, error, hint }) {
   return (
     <div style={{ marginBottom: '1rem' }}>
-      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600',
+      <label htmlFor={htmlFor} style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600',
         color: C.textMid, marginBottom: '0.35rem' }}>{label}</label>
       {children}
       {hint  && <p style={{ color: C.textLight, fontSize: '0.74rem', marginTop: '0.25rem' }}>{hint}</p>}
@@ -163,8 +163,9 @@ function ModalAmbulancia({ ambulancia, token, onClose, onSaved }) {
       )}
 
       <form onSubmit={guardar}>
-        <Campo label="Código *" error={errores.codigo} hint="Ej: AMB-01, AMB-21">
+        <Campo label="Código *" htmlFor="ambulancia-codigo" error={errores.codigo} hint="Ej: AMB-01, AMB-21">
           <input
+            id="ambulancia-codigo"
             value={form.codigo}
             onChange={set('codigo')}
             placeholder="AMB-21"
@@ -172,16 +173,18 @@ function ModalAmbulancia({ ambulancia, token, onClose, onSaved }) {
             autoFocus
           />
         </Campo>
-        <Campo label="Placa *" error={errores.placa} hint="Se guardará en mayúsculas automáticamente">
+        <Campo label="Placa *" htmlFor="ambulancia-placa" error={errores.placa} hint="Se guardará en mayúsculas automáticamente">
           <input
+            id="ambulancia-placa"
             value={form.placa}
             onChange={set('placa')}
             placeholder="Ej: ABC-123"
             style={inputStyle}
           />
         </Campo>
-        <Campo label="Descripción">
+        <Campo label="Descripción" htmlFor="ambulancia-descripcion">
           <input
+            id="ambulancia-descripcion"
             value={form.descripcion}
             onChange={set('descripcion')}
             placeholder="Ej: Ambulancia básica zona norte"

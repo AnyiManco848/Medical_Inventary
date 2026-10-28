@@ -167,6 +167,9 @@ describe('usuario.controller · editar', () => {
     await editar({ params: { id: '3' }, body: { numero_ambulancia: 'Ocupado01' } }, res, next);
 
     expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'El número de ambulancia/usuario ya está en uso por otro usuario',
+    });
   });
 
   it('permite conservar el mismo identificador (la coincidencia es el propio usuario)', async () => {
@@ -176,8 +179,10 @@ describe('usuario.controller · editar', () => {
 
     await editar({ params: { id: '3' }, body: { numero_ambulancia: 'Viejo01' } }, res, next);
 
-    expect(res.status).not.toHaveBeenCalledWith(409);
-    expect(usuario.save).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(usuario.numero_ambulancia).toBe('Viejo01');
+    expect(usuario.save).toHaveBeenCalledTimes(1);
+    expect(res.json.mock.calls[0][0]).toMatchObject({ id: 3, numero_ambulancia: 'Viejo01' });
   });
 
   it('400 si el identificador nuevo está vacío', async () => {
@@ -186,6 +191,9 @@ describe('usuario.controller · editar', () => {
     await editar({ params: { id: '3' }, body: { numero_ambulancia: '  ' } }, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'El número de ambulancia/usuario no puede estar vacío',
+    });
   });
 
   it('400 si el rol indicado no existe', async () => {
@@ -207,7 +215,7 @@ describe('usuario.controller · editar', () => {
 
     expect(usuario.roleId).toBe(1);
     expect(usuario.ambulanciaId).toBeNull();
-    expect(usuario.save).toHaveBeenCalled();
+    expect(usuario.save).toHaveBeenCalledTimes(1);
   });
 
   it('400 si la ambulancia asignada no existe o está inactiva', async () => {
@@ -262,6 +270,7 @@ describe('usuario.controller · desactivar', () => {
     await desactivar({ params: { id: '1' } }, res, vi.fn());
 
     expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Usuario no encontrado' });
   });
 
   it('marca el usuario como inactivo (borrado lógico)', async () => {
@@ -272,7 +281,7 @@ describe('usuario.controller · desactivar', () => {
     await desactivar({ params: { id: '5' } }, res, vi.fn());
 
     expect(usuario.activo).toBe(false);
-    expect(usuario.save).toHaveBeenCalled();
+    expect(usuario.save).toHaveBeenCalledTimes(1);
     expect(res.json).toHaveBeenCalledWith({
       message: 'Usuario desactivado correctamente',
       id: 5,
