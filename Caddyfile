@@ -1,0 +1,26 @@
+# Proxy HTTPS (docker-compose.yml). Caddy obtiene y renueva el certificado de Let's Encrypt.
+# Requiere DNS apuntando a la EC2 y puertos 80/443 abiertos en el Security Group.
+medicalinventary.duckdns.org {
+	encode zstd gzip
+
+	request_body {
+		max_size 25MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# El backend ya usa el prefijo /api (y sirve las fotos en /uploads): se reenvía sin reescribir
+	@backend path /api/* /uploads/*
+	handle @backend {
+		reverse_proxy backend:4000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

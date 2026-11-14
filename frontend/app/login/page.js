@@ -170,8 +170,8 @@ export default function LoginPage() {
         numero_ambulancia: usuario.trim(),
         password,
       });
-      Cookies.set('token',   data.token,                   { expires: 1 / 3, sameSite: 'strict' });
-      Cookies.set('usuario', JSON.stringify(data.usuario), { expires: 1 / 3, sameSite: 'strict' });
+      Cookies.set('token',   data.token,                   { expires: 1 / 3, sameSite: 'strict', secure: globalThis.location?.protocol === 'https:' });
+      Cookies.set('usuario', JSON.stringify(data.usuario), { expires: 1 / 3, sameSite: 'strict', secure: globalThis.location?.protocol === 'https:' });
       router.push('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Error al iniciar sesión. Intente nuevamente.');

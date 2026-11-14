@@ -3,7 +3,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --ignore-scripts
 COPY . .
-ARG NEXT_PUBLIC_API_URL
+# Next.js fija NEXT_PUBLIC_* al compilar. Sin "/api" final: el código ya añade /api/... a cada ruta.
+ARG NEXT_PUBLIC_API_URL=https://medicalinventary.duckdns.org
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
