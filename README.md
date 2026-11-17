@@ -178,6 +178,22 @@ No borres el volumen `caddy_data` (guarda los certificados; Let's Encrypt limita
 - El bloqueo de 24 h tras 3 intentos fallidos se mantiene.
 - El backend envía HSTS y demás cabeceras con `helmet` y confía en un proxy (`trust proxy`).
 
+### Cifrado de la contraseña en el login
+
+HTTPS sigue siendo la protección real del transporte. Además, la contraseña se cifra en el navegador
+para que no aparezca legible en **Network > Payload**:
+
+1. Al arrancar, el backend genera en memoria un par RSA de 2048 bits (la clave privada no se guarda en disco ni en logs).
+2. Al iniciar sesión, el frontend pide `GET /api/auth/public-key` → `{ publicKey }` (SPKI en base64, `Cache-Control: no-store`).
+3. Cifra `{"password": "...", "ts": <epoch ms>}` con RSA-OAEP / SHA-256 (`crypto.subtle`) y envía `{ numero_ambulancia, password_cifrada }`.
+4. El backend descifra, rechaza con `400` si no puede descifrar o si `ts` tiene más de 2 minutos, y sigue con `bcrypt.compare` y el bloqueo de 24 h.
+
+- En producción (`NODE_ENV=production`) un campo `password` en claro responde `400`; en desarrollo se acepta por compatibilidad.
+- `crypto.subtle` solo existe en contextos seguros (HTTPS o `localhost`): si la página se abre por HTTP en otra dirección, el login muestra un error.
+- Variable opcional **`LOGIN_RSA_PRIVATE_KEY`**: clave privada RSA en PEM (se admiten los saltos de línea escritos como `\n`). Úsala solo si corres varias instancias del backend, para que todas compartan la clave. Genérala con:
+  `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048`
+- Pendiente: limitar peticiones por IP (rate limiting) en `/api/auth/login`; hoy solo existe el bloqueo de la cuenta.
+
 ---
 
 ## Despliegue en Render.com
@@ -231,7 +247,8 @@ El proyecto está configurado para desplegarse en [Render.com](https://render.co
 
 | Método | Ruta | Protegida | Descripción |
 |--------|------|-----------|-------------|
-| POST | `/api/auth/login` | No | Iniciar sesión |
+| GET | `/api/auth/public-key` | No | Clave pública RSA para cifrar la contraseña del login |
+| POST | `/api/auth/login` | No | Iniciar sesión (`numero_ambulancia`, `password_cifrada`) |
 | GET | `/api/health` | No | Estado del servidor |
 | GET | `/api/insumos` | JWT | Listar insumos |
 | POST | `/api/movimientos/entrega` | JWT | Registrar entrega de insumo |

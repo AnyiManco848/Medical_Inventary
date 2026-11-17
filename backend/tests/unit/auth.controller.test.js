@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { cjs, crearRes } from '../helpers.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { cjs, crearRes, cifrarParaLogin } from '../helpers.js';
 
 const bcrypt = cjs('bcryptjs');
 const jwt = cjs('jsonwebtoken');
 const { Usuario } = cjs('../src/models');
-const { login } = cjs('../src/controllers/auth.controller');
+const { login, clavePublica } = cjs('../src/controllers/auth.controller');
+const { obtenerClavePublica, VIGENCIA_MS, MENSAJE_INVALIDA, MENSAJE_VENCIDA } = cjs('../src/config/loginRsa');
 
 const PASSWORD = 'Clave123*';
 // Costo 4 para que el hash sea rápido en pruebas (en producción se usa 12)
@@ -173,6 +174,13 @@ describe('auth.controller · login', () => {
     expect(datos.ambulancia).toEqual({ id: 5, codigo: 'AMB-05', placa: 'ABC123' });
   });
 
+  it('400 si el cuerpo no existe', async () => {
+    await login({}, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Usuario y contraseña son requeridos' });
+  });
+
   it('delega en next(error) si la base de datos falla', async () => {
     const error = new Error('DB caída');
     vi.spyOn(Usuario, 'findOne').mockRejectedValue(error);
@@ -181,5 +189,140 @@ describe('auth.controller · login', () => {
 
     expect(next).toHaveBeenCalledWith(error);
     expect(res.status).not.toHaveBeenCalled();
+  });
+});
+
+describe('auth.controller · contraseña cifrada (RSA-OAEP)', () => {
+  let res;
+  let next;
+  const nodeEnvOriginal = process.env.NODE_ENV;
+
+  beforeEach(() => {
+    res = crearRes();
+    next = vi.fn();
+  });
+
+  afterEach(() => {
+    process.env.NODE_ENV = nodeEnvOriginal;
+  });
+
+  const cuerpoCifrado = (password, opciones) => ({
+    numero_ambulancia: 'Administrador01',
+    password_cifrada: cifrarParaLogin(password, opciones),
+  });
+
+  it('200 cuando password_cifrada se descifra y coincide con el hash', async () => {
+    vi.spyOn(Usuario, 'findOne').mockResolvedValue(crearUsuarioFalso());
+
+    await login({ body: cuerpoCifrado(PASSWORD) }, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json.mock.calls[0][0].token).toEqual(expect.any(String));
+  });
+
+  it('en producción también acepta la contraseña cifrada', async () => {
+    process.env.NODE_ENV = 'production';
+    vi.spyOn(Usuario, 'findOne').mockResolvedValue(crearUsuarioFalso());
+
+    await login({ body: cuerpoCifrado(PASSWORD) }, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('400 si el ts tiene más de 2 minutos y no consulta la base ni suma intentos', async () => {
+    const spy = vi.spyOn(Usuario, 'findOne');
+
+    await login({ body: cuerpoCifrado(PASSWORD, { ts: Date.now() - VIGENCIA_MS - 1000 }) }, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: MENSAJE_VENCIDA });
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('400 si password_cifrada no es base64 válido', async () => {
+    const spy = vi.spyOn(Usuario, 'findOne');
+
+    await login({ body: { numero_ambulancia: 'Administrador01', password_cifrada: '%%%no-base64%%%' } }, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: MENSAJE_INVALIDA });
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('en producción rechaza la contraseña en claro con 400', async () => {
+    process.env.NODE_ENV = 'production';
+    const spy = vi.spyOn(Usuario, 'findOne');
+
+    await login({ body: { numero_ambulancia: 'Administrador01', password: PASSWORD } }, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'La contraseña debe enviarse cifrada.' });
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('en desarrollo acepta la contraseña en claro (compatibilidad)', async () => {
+    process.env.NODE_ENV = 'development';
+    vi.spyOn(Usuario, 'findOne').mockResolvedValue(crearUsuarioFalso());
+
+    await login({ body: { numero_ambulancia: 'Administrador01', password: PASSWORD } }, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('si llegan los dos campos se usa la cifrada', async () => {
+    vi.spyOn(Usuario, 'findOne').mockResolvedValue(crearUsuarioFalso());
+
+    await login({
+      body: { ...cuerpoCifrado(PASSWORD), password: 'otra-cosa' },
+    }, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('el bloqueo sigue funcionando: 3 contraseñas cifradas incorrectas bloquean 24 horas', async () => {
+    const usuario = crearUsuarioFalso();
+    vi.spyOn(Usuario, 'findOne').mockResolvedValue(usuario);
+
+    const respuestas = [];
+    for (let i = 0; i < 3; i++) {
+      const r = crearRes();
+      await login({ body: cuerpoCifrado('mala') }, r, next);
+      respuestas.push(r);
+    }
+
+    expect(respuestas[0].status).toHaveBeenCalledWith(401);
+    expect(respuestas[0].json).toHaveBeenCalledWith({ message: 'Contraseña incorrecta. Intentos restantes: 2' });
+    expect(respuestas[1].json).toHaveBeenCalledWith({ message: 'Contraseña incorrecta. Intentos restantes: 1' });
+    expect(respuestas[2].status).toHaveBeenCalledWith(403);
+    expect(usuario.bloqueado_hasta).toBeInstanceOf(Date);
+
+    // Con la cuenta bloqueada, ni la contraseña correcta deja entrar
+    const r4 = crearRes();
+    await login({ body: cuerpoCifrado(PASSWORD) }, r4, next);
+    expect(r4.status).toHaveBeenCalledWith(403);
+    expect(r4.json.mock.calls[0][0].message).toMatch(/^Cuenta bloqueada\. Intente en/);
+  });
+
+  it('no escribe en consola el cuerpo, la contraseña ni el texto descifrado', async () => {
+    const espias = ['log', 'info', 'warn', 'error', 'debug'].map((m) => vi.spyOn(console, m).mockImplementation(() => {}));
+    vi.spyOn(Usuario, 'findOne').mockResolvedValue(crearUsuarioFalso());
+
+    await login({ body: cuerpoCifrado(PASSWORD) }, res, next);
+    await login({ body: cuerpoCifrado('mala') }, crearRes(), next);
+    await login({ body: { numero_ambulancia: 'x', password_cifrada: 'AAAA' } }, crearRes(), next);
+
+    for (const espia of espias) expect(espia).not.toHaveBeenCalled();
+  });
+});
+
+describe('auth.controller · clavePublica', () => {
+  it('responde la clave pública SPKI en base64 con Cache-Control: no-store', () => {
+    const res = crearRes();
+    res.set = vi.fn(() => res);
+
+    clavePublica({}, res);
+
+    expect(res.set).toHaveBeenCalledWith('Cache-Control', 'no-store');
+    expect(res.json).toHaveBeenCalledWith({ publicKey: obtenerClavePublica() });
   });
 });
