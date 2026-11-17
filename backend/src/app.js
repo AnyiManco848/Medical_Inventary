@@ -3,6 +3,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const path = require('node:path');
 
 const authRoutes = require('./routes/auth.routes');
@@ -18,9 +19,24 @@ const app = express();
 // No anunciar "X-Powered-By: Express": revela el framework y facilita buscar fallos conocidos
 app.disable('x-powered-by');
 
+// Detrás de Caddy (1 proxy): req.ip, req.protocol y req.secure reflejan al cliente real
+app.set('trust proxy', 1);
+
+// Cabeceras de seguridad: HSTS (1 año), nosniff, frame-ancestors, etc.
+// 'same-site' deja que el frontend (otro puerto en local) cargue las fotos de /uploads
+app.use(helmet({
+  strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
+  crossOriginResourcePolicy: { policy: 'same-site' },
+}));
+
 // --- Middlewares globales ---
+// Solo el dominio HTTPS de producción; localhost:3000 únicamente fuera de producción
+const ORIGEN_PRODUCCION = 'https://medicalinventary.duckdns.org';
+const origenesPermitidos = [process.env.FRONTEND_URL || ORIGEN_PRODUCCION];
+if (process.env.NODE_ENV !== 'production') origenesPermitidos.push('http://localhost:3000');
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: origenesPermitidos,
   credentials: true,
 }));
 app.use(express.json());

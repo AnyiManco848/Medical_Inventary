@@ -60,7 +60,7 @@ describe('login/page.js', () => {
       numero_ambulancia: 'Administrador01',
       password: 'Clave123*',
     });
-    const opciones = { expires: 1 / 3, sameSite: 'strict' };
+    const opciones = { expires: 1 / 3, sameSite: 'strict', secure: false };
     expect(Cookies.set).toHaveBeenCalledWith('token', 'jwt-falso', opciones);
     expect(Cookies.set).toHaveBeenCalledWith('usuario', JSON.stringify(usuario), opciones);
   });
