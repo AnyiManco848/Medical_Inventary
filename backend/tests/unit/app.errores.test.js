@@ -128,6 +128,49 @@ describe('app.js · manejador global de errores', () => {
   });
 });
 
+describe('app.js · JSON mal formado', () => {
+  const SECRETO = 'Clave123*-secreta';
+  const RESPUESTA = { message: 'El cuerpo de la petición no es un JSON válido.' };
+
+  // Todo lo que se haya escrito en consola, como texto
+  const textoRegistrado = (espia) => espia.mock.calls.flat().map(String).join(' ');
+
+  it('flujo real: un login con JSON roto responde 400 genérico y solo registra "JSON inválido"', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .set('Content-Type', 'application/json')
+      .send(`{"numero_ambulancia":"Administrador01","password":"${SECRETO}"`);
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual(RESPUESTA);
+    expect(JSON.stringify(res.body)).not.toContain(SECRETO);
+    expect(console.error).toHaveBeenCalledTimes(1);
+    expect(console.error).toHaveBeenCalledWith('[ERROR]', 'JSON inválido');
+    expect(textoRegistrado(console.error)).not.toContain(SECRETO);
+  });
+
+  it('un SyntaxError del body parser (con body) tampoco registra el mensaje ni el cuerpo', async () => {
+    const error = Object.assign(new SyntaxError(`Unexpected token in "${SECRETO}"`), { body: SECRETO, status: 400 });
+    vi.spyOn(Usuario, 'findAll').mockRejectedValue(error);
+
+    const res = await pedirUsuarios();
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual(RESPUESTA);
+    expect(console.error).toHaveBeenCalledWith('[ERROR]', 'JSON inválido');
+    expect(textoRegistrado(console.error)).not.toContain(SECRETO);
+  });
+
+  it('un SyntaxError que no viene del body parser sigue el manejo normal', async () => {
+    vi.spyOn(Usuario, 'findAll').mockRejectedValue(new SyntaxError('Fallo interno'));
+
+    const res = await pedirUsuarios();
+
+    expect(res.status).toBe(500);
+    expect(console.error).toHaveBeenCalledWith('[ERROR]', 'Fallo interno');
+  });
+});
+
 describe('routes/ambulancia.routes.js · GET /api/ambulancias', () => {
   it('lista solo ambulancias activas con los campos públicos', async () => {
     const spy = vi.spyOn(Ambulancia, 'findAll').mockResolvedValue([{ id: 1, codigo: 'AMB-01' }]);

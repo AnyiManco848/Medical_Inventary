@@ -24,6 +24,8 @@ export default defineConfig({
         // Configuración de multer: tiene lógica de seguridad (tipos de archivo y tamaño)
         'src/config/upload.js',
         'src/config/uploadEvidencia.js',
+        // Claves RSA y descifrado de la contraseña del login
+        'src/config/loginRsa.js',
         // Elige la conexión según DATABASE_URL o las variables DB_*; se prueba con Sequelize simulado
         'src/config/database.js',
       ],

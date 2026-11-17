@@ -1,13 +1,40 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Usuario, Role, Ambulancia } = require('../models');
+const { obtenerClavePublica, descifrarPassword } = require('../config/loginRsa');
+
+// GET /api/auth/public-key
+// Clave pública RSA (SPKI en base64) con la que el frontend cifra la contraseña del login.
+// HTTPS sigue siendo la protección real del transporte; esto solo evita la contraseña legible en el Payload.
+const clavePublica = (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ publicKey: obtenerClavePublica() });
+};
+
+// Obtiene la contraseña en claro a partir del cuerpo: { password_cifrada } siempre;
+// { password } en claro solo fuera de producción (compatibilidad con desarrollo y pruebas).
+// Devuelve { password } o { error }. Nunca registra el cuerpo ni la contraseña.
+function obtenerPassword({ password_cifrada, password }) {
+  if (password_cifrada) return descifrarPassword(password_cifrada);
+  if (process.env.NODE_ENV === 'production') {
+    return { error: 'La contraseña debe enviarse cifrada.' };
+  }
+  return { password };
+}
 
 const login = async (req, res, next) => {
   try {
-    const { numero_ambulancia, password } = req.body;
+    const body = req.body ?? {};
+    const { numero_ambulancia } = body;
 
-    if (!numero_ambulancia || !password) {
+    if (!numero_ambulancia || (!body.password && !body.password_cifrada)) {
       return res.status(400).json({ message: 'Usuario y contraseña son requeridos' });
+    }
+
+    // Se descifra antes de consultar la base: un mensaje inválido o vencido no cuenta como intento fallido
+    const { password, error } = obtenerPassword(body);
+    if (error) {
+      return res.status(400).json({ message: error });
     }
 
     const usuario = await Usuario.findOne({
@@ -89,4 +116,4 @@ const login = async (req, res, next) => {
   }
 };
 
-module.exports = { login };
+module.exports = { login, clavePublica };

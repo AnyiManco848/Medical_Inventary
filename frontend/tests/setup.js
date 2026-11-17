@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import { webcrypto } from 'node:crypto';
 
 // La URL de la API sale del valor por defecto de cada página (http://localhost:4000)
 delete process.env.NEXT_PUBLIC_API_URL;
@@ -27,6 +28,11 @@ if (!window.matchMedia) {
 }
 if (!URL.createObjectURL) URL.createObjectURL = () => 'blob:prueba';
 if (!URL.revokeObjectURL) URL.revokeObjectURL = () => {};
+
+// jsdom no trae crypto.subtle: se usa el WebCrypto de Node (el login cifra la contraseña con RSA-OAEP)
+if (!globalThis.crypto?.subtle) {
+  Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
+}
 
 afterEach(() => {
   cleanup();

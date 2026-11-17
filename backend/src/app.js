@@ -62,6 +62,13 @@ app.get('/api/health', (req, res) => {
 
 // --- Manejo global de errores ---
 app.use((err, req, res, next) => {
+  // JSON mal formado (body parser): su mensaje puede incluir parte del cuerpo, que en el login
+  // lleva credenciales. No se registra err.message ni el cuerpo, solo un texto fijo.
+  if (err.type === 'entity.parse.failed' || (err instanceof SyntaxError && 'body' in err)) {
+    console.error('[ERROR]', 'JSON inválido');
+    return res.status(400).json({ message: 'El cuerpo de la petición no es un JSON válido.' });
+  }
+
   console.error('[ERROR]', err.message);
   // Archivo más grande que el límite de multer (5 MB fotos de baja, 8 MB evidencias)
   if (err.code === 'LIMIT_FILE_SIZE') {

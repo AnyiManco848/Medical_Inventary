@@ -146,6 +146,33 @@ const EyeIcon = ({ open }) => open ? (
   </svg>
 );
 
+/* ── Cifrado de la contraseña (RSA-OAEP / SHA-256) ───────────────── */
+// HTTPS sigue siendo la protección real del transporte. Esto solo evita que la contraseña
+// aparezca legible en Network > Payload: se cifra con la clave pública del backend antes de enviarla.
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+const MENSAJE_ERROR_CIFRADO =
+  'No se pudo proteger la contraseña antes de enviarla. Recargue la página e intente nuevamente.';
+
+// Devuelve el base64 de RSA-OAEP sobre {"password", "ts"} o null si no se pudo obtener la clave o cifrar.
+// crypto.subtle solo existe en contextos seguros (HTTPS o localhost).
+async function cifrarPassword(password) {
+  try {
+    const subtle = globalThis.crypto?.subtle;
+    if (!subtle) return null;
+
+    const { data } = await axios.get(`${API}/api/auth/public-key`);
+    const spki = Uint8Array.from(atob(data.publicKey), (c) => c.codePointAt(0));
+    const clave = await subtle.importKey('spki', spki, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
+
+    const mensaje = new TextEncoder().encode(JSON.stringify({ password, ts: Date.now() }));
+    const cifrado = new Uint8Array(await subtle.encrypt({ name: 'RSA-OAEP' }, clave, mensaje));
+    return btoa(String.fromCodePoint(...cifrado));
+  } catch {
+    return null;
+  }
+}
+
 /* ── Página principal ────────────────────────────────────────────── */
 export default function LoginPage() {
   const router               = useRouter();
@@ -166,9 +193,16 @@ export default function LoginPage() {
 
     setCargando(true);
     try {
-      const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/auth/login`, {
+      const passwordCifrada = await cifrarPassword(password);
+      if (!passwordCifrada) {
+        setError(MENSAJE_ERROR_CIFRADO);
+        return;
+      }
+
+      // Nunca se envía el campo password en claro
+      const { data } = await axios.post(`${API}/api/auth/login`, {
         numero_ambulancia: usuario.trim(),
-        password,
+        password_cifrada: passwordCifrada,
       });
       Cookies.set('token',   data.token,                   { expires: 1 / 3, sameSite: 'strict', secure: globalThis.location?.protocol === 'https:' });
       Cookies.set('usuario', JSON.stringify(data.usuario), { expires: 1 / 3, sameSite: 'strict', secure: globalThis.location?.protocol === 'https:' });

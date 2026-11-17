@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
-import { cjs, crearToken } from '../helpers.js';
+import { cjs, crearToken, cifrarParaLogin } from '../helpers.js';
 
 const bcrypt = cjs('bcryptjs');
 const { Usuario, CentroAsistencial, Ambulancia } = cjs('../src/models');
@@ -154,6 +154,62 @@ describe('POST /api/auth/login (flujo completo por HTTP)', () => {
       .set('Authorization', `Bearer ${login.body.token}`);
 
     expect(protegida.status).toBe(200);
+  });
+});
+
+describe('GET /api/auth/public-key', () => {
+  it('devuelve la clave pública SPKI en base64, sin cabeceras PEM y sin caché', async () => {
+    const res = await request(app).get('/api/auth/public-key');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['cache-control']).toBe('no-store');
+    expect(res.body.publicKey).toMatch(/^[A-Za-z0-9+/]+={0,2}$/);
+    const clave = cjs('node:crypto').createPublicKey({
+      key: Buffer.from(res.body.publicKey, 'base64'), format: 'der', type: 'spki',
+    });
+    expect(clave.asymmetricKeyType).toBe('rsa');
+  });
+
+  it('es pública: no requiere token', async () => {
+    const res = await request(app).get('/api/auth/public-key');
+
+    expect(res.status).not.toBe(401);
+  });
+});
+
+describe('POST /api/auth/login con password_cifrada (flujo completo por HTTP)', () => {
+  it('cifra con la clave del endpoint y obtiene 200', async () => {
+    vi.spyOn(Usuario, 'findOne').mockResolvedValue({
+      id: 1,
+      nombre: 'Administrador 01',
+      numero_ambulancia: 'Administrador01',
+      password: bcrypt.hashSync('Clave123*', 4),
+      activo: true,
+      intentos_fallidos: 0,
+      bloqueado_hasta: null,
+      rol: { nombre: 'admin' },
+      ambulancia: null,
+      save: vi.fn().mockResolvedValue(undefined),
+    });
+    const { body } = await request(app).get('/api/auth/public-key');
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({
+        numero_ambulancia: 'Administrador01',
+        password_cifrada: cifrarParaLogin('Clave123*', { publicKey: body.publicKey }),
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.usuario.rol).toBe('admin');
+  });
+
+  it('400 con base64 inválido', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ numero_ambulancia: 'Administrador01', password_cifrada: 'no*es*base64' });
+
+    expect(res.status).toBe(400);
   });
 });
 
