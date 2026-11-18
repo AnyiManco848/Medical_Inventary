@@ -1,0 +1,1 @@
+  2jsX/hr*backend/src/models/MovimientoInventario.js

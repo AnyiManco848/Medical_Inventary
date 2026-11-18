@@ -1,0 +1,1 @@
+ 2jsXKhrbackend/src/models/Insumo.js

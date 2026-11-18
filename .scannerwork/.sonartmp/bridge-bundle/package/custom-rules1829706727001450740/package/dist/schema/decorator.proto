@@ -1,0 +1,36 @@
+syntax = "proto3";
+option java_package = "com.sonarsource.architecture.udg.protobuf";
+option csharp_namespace = "SonarAnalyzer.Udg.Protobuf";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+import "property.proto";
+
+/**
+ * A decorator discovered in a source file, such as an annotation (Java/C#),
+ * attribute (C#) or decorator (Python/JS/TS). Used to help with cross-project
+ * boundary detection.
+ */
+message Decorator {
+
+    /**
+     * String ID: Fully qualified name of the decorator.
+     */
+    string name_aid = 1;
+
+    /**
+     * Arguments to the decorator captured as properties.
+     */
+    optional Properties properties = 2;
+}
+
+/**
+ * Decorators attached to the enclosing node, such as an item or dependency.
+ */
+message Decorators {
+
+    /**
+     * All decorators attached to the enclosing node.
+     */
+    repeated Decorator decorator = 1;
+}

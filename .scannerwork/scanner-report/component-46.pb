@@ -1,0 +1,1 @@
+. 2jsXøhr&frontend/app/dashboard/centros/page.js
