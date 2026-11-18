@@ -1,0 +1,1 @@
+: 2jsXhrfrontend/app/layout.js

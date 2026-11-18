@@ -1,0 +1,50 @@
+syntax = "proto3";
+option java_package = "com.sonarsource.architecture.udg.protobuf";
+option csharp_namespace = "SonarAnalyzer.Udg.Protobuf";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+/**
+ * Classification of a boundary relative to the analyzed project.
+ */
+enum BoundaryKind {
+
+  /**
+   * The current project consumes (uses) another project's inter-project API — an outgoing
+   * dependency (exit point).
+   */
+  EXIT_POINT = 0;
+
+  /**
+   * The current project provides this inter-project API; other projects enter through it
+   * (entry point).
+   */
+  ENTRY_POINT = 1;
+}
+
+/**
+ * A boundary detected in a single source file: one side of a cross-project dependency.
+ */
+message Boundary {
+
+  /**
+   * Cross-project identification key, constructed from the descriptor's key template.
+   */
+  string key = 1;
+
+  /**
+   * Whether this boundary is an exit point or entry point.
+   */
+  BoundaryKind kind = 2;
+}
+
+/**
+ * Boundaries detected in the source file represented by the enclosing UDG.
+ */
+message Boundaries {
+
+  /**
+   * All boundaries found in this file.
+   */
+  repeated Boundary boundary = 1;
+}

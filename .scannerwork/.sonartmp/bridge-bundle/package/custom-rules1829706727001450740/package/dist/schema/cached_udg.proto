@@ -1,0 +1,38 @@
+syntax = "proto3";
+option java_package = "com.sonarsource.architecture.udg.protobuf";
+option csharp_namespace = "SonarAnalyzer.Udg.Protobuf";
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+/**
+ * One scanner-cache entry: the UDG produced for a single source file, plus the metadata needed to
+ * restore it in a later analysis that does not analyze that file again.
+ *
+ * This is an internal cache representation, not part of the UDG contract: nothing but the caching
+ * frontend code writes or reads it. The layout is versioned through
+ * `ProtobufConstants.UDG_CACHE_FORMAT_VERSION`, which is part of the cache key rather than a field
+ * here — a version bump makes older entries unreachable instead of handing them to a reader that can
+ * no longer interpret them.
+ */
+message CachedUdg {
+
+    /**
+     * File name the UDG was stored under when it was generated, without any directory part.
+     * Restoring under the original name keeps the analysis data keys the reporter derives from it
+     * (`architecture.udg.<name>`) stable between a full and an incremental analysis. The name is
+     * stored rather than recomputed because the generating frontend may name UDG files in a way that
+     * cannot be reproduced from the source path alone.
+     */
+    string udg_file_name = 1;
+
+    /**
+     * Hash of the source file's content at the time the UDG was generated, as reported by
+     * `InputFile.md5Hash()`. A restore is only valid while the source file still has this hash.
+     */
+    string content_hash = 2;
+
+    /**
+     * The serialized `Udg` message, byte-identical to the `.udg` file that was generated.
+     */
+    bytes udg = 3;
+}
