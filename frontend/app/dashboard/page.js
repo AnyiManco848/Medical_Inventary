@@ -107,18 +107,7 @@ const EcgIcon = () => (
 /* ── Navbar compartido ───────────────────────────────────────────── */
 function Navbar({ usuario, onCerrarSesion, backLink }) {
   return (
-    <header style={{
-      backgroundColor: C.cardBg,
-      borderBottom:    `1px solid ${C.navBorder}`,
-      padding:         '0.9rem 2rem',
-      display:         'flex',
-      alignItems:      'center',
-      justifyContent:  'space-between',
-      position:        'sticky',
-      top:             0,
-      zIndex:          10,
-      boxShadow:       '0 1px 4px rgba(45,134,83,0.07)',
-    }}>
+    <header className="app-header">
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {backLink && (
           <>
@@ -138,7 +127,7 @@ function Navbar({ usuario, onCerrarSesion, backLink }) {
           }}>
             <EcgIcon />
           </div>
-          <span style={{ fontWeight: '700', fontSize: '1rem', color: C.textDark }}>
+          <span className="app-header__title" style={{ fontWeight: '700', color: C.textDark }}>
             Medical<span style={{ color: C.green }}>Inventary</span>
           </span>
         </div>
@@ -146,7 +135,7 @@ function Navbar({ usuario, onCerrarSesion, backLink }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         {usuario && (
-          <div style={{ textAlign: 'right' }}>
+          <div className="app-header__user" style={{ textAlign: 'right' }}>
             <p style={{ fontSize: '0.85rem', color: C.textDark, fontWeight: '600', lineHeight: '1.2' }}>
               {usuario.nombre || usuario.numero_ambulancia}
             </p>
@@ -171,7 +160,7 @@ function Navbar({ usuario, onCerrarSesion, backLink }) {
           onMouseEnter={(e) => { e.target.style.backgroundColor = '#fce4e1'; }}
           onMouseLeave={(e) => { e.target.style.backgroundColor = '#fdf0ef'; }}
         >
-          Cerrar sesión
+          Cerrar<span className="hide-xs"> sesión</span>
         </button>
       </div>
     </header>
@@ -213,17 +202,17 @@ export default function DashboardPage() {
 
   if (!usuario) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100dvh', backgroundColor: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: C.textMid }}>Cargando...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.bg }}>
+    <div className="page-shell">
       <Navbar usuario={usuario} onCerrarSesion={cerrarSesion} />
 
-      <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <main className="app-main" style={{ maxWidth: '1200px' }}>
         {/* Encabezado */}
         <div style={{ marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '1.45rem', fontWeight: '700', color: C.textDark, marginBottom: '0.25rem' }}>
@@ -252,7 +241,7 @@ export default function DashboardPage() {
             <p style={{ fontSize: '0.75rem', fontWeight: '600', color: C.textLight, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
               Administración
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: '1rem' }}>
+            <div className="cards-grid">
               <Link href="/dashboard/usuarios" style={{ textDecoration: 'none' }}>
                 <CardAccion
                   titulo="Gestión de Usuarios"
@@ -313,7 +302,7 @@ export default function DashboardPage() {
             <p style={{ fontSize: '0.75rem', fontWeight: '600', color: C.textLight, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
               Acciones disponibles
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '1.25rem' }}>
+            <div className="cards-grid">
               <Link href="/dashboard/entregar" style={{ textDecoration: 'none' }}>
                 <CardAccion
                   titulo="Entregar insumo"

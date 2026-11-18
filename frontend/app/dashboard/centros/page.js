@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
+import Modal from '../_components/Modal';
+import ActionBar from '../_components/ActionBar';
+import FloatingActionButton from '../_components/FloatingActionButton';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -71,22 +74,6 @@ function Btn({ children, onClick, variant = 'primary', size = 'sm', disabled = f
       fontWeight:      '600', cursor: disabled ? 'not-allowed' : 'pointer',
       transition:      'opacity 0.15s', ...extra,
     }}>{children}</button>
-  );
-}
-
-function Modal({ children, onClose, width = '520px' }) {
-  return (
-    <div onClick={onClose} style={{
-      position: 'fixed', inset: 0, backgroundColor: 'rgba(26,46,37,0.45)',
-      backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex',
-      alignItems: 'center', justifyContent: 'center', padding: '1rem',
-    }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        backgroundColor: C.cardBg, borderRadius: '16px', padding: '2rem',
-        width: '100%', maxWidth: width, maxHeight: '90vh', overflowY: 'auto',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
-      }}>{children}</div>
-    </div>
   );
 }
 
@@ -174,12 +161,12 @@ function ModalCentro({ centro, token, onClose, onSaved }) {
             placeholder="contacto@hospital.com" style={inputStyle} />
         </Campo>
 
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+        <ActionBar>
           <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
           <Btn variant="primary" type="submit" disabled={enviando}>
             {enviando ? 'Guardando...' : 'Guardar'}
           </Btn>
-        </div>
+        </ActionBar>
       </form>
     </Modal>
   );
@@ -217,8 +204,8 @@ function ModalInsumos({ centro, token, onClose }) {
 
   return (
     <Modal onClose={onClose} width="900px">
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-        marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div className="modal-sticky-head" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <h2 style={{ fontSize: '1.1rem', fontWeight: '700', color: C.textDark, marginBottom: '0.2rem' }}>
             Insumos — {centro.nombre}
@@ -233,7 +220,7 @@ function ModalInsumos({ centro, token, onClose }) {
       <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
           placeholder="Buscar por nombre o código..."
-          style={{ flex: 1, minWidth: '200px', ...inputStyle }} />
+          style={{ flex: 1, minWidth: 'min(100%, 200px)', ...inputStyle }} />
         <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
           style={{ ...inputStyle, width: 'auto', cursor: 'pointer' }}>
           <option value="">Todos los estados</option>
@@ -258,7 +245,7 @@ function ModalInsumos({ centro, token, onClose }) {
       ) : (
         <div style={{ backgroundColor: C.cardBg, border: `1px solid ${C.amberBorder}`,
           borderRadius: '12px', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-scroll">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ backgroundColor: C.greenLight, borderBottom: `2px solid ${C.greenBorder}` }}>
@@ -409,7 +396,7 @@ export default function CentrosPage() {
 
   if (!usuario) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: C.bg, display: 'flex',
+      <div style={{ minHeight: '100dvh', backgroundColor: C.bg, display: 'flex',
         alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: C.textMid }}>Cargando...</p>
       </div>
@@ -417,14 +404,9 @@ export default function CentrosPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.bg }}>
+    <div className="page-shell">
       {/* Navbar */}
-      <header style={{
-        backgroundColor: C.cardBg, borderBottom: `1px solid ${C.navBorder}`,
-        padding: '0.9rem 2rem', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100,
-        boxShadow: '0 1px 4px rgba(45,134,83,0.07)',
-      }}>
+      <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link href="/dashboard" style={{ color: C.textMid, textDecoration: 'none', fontSize: '0.875rem' }}>
             ← Dashboard
@@ -436,14 +418,14 @@ export default function CentrosPage() {
               border: `1px solid ${C.amberBorder}`, borderRadius: '8px', fontSize: '1rem' }}>
               🏥
             </div>
-            <span style={{ fontWeight: '700', fontSize: '1rem', color: C.textDark }}>
+            <span className="app-header__title" style={{ fontWeight: '700', color: C.textDark }}>
               Centros Asistenciales
             </span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           {usuario && (
-            <div style={{ textAlign: 'right' }}>
+            <div className="app-header__user" style={{ textAlign: 'right' }}>
               <p style={{ fontSize: '0.85rem', color: C.textDark, fontWeight: '600', lineHeight: '1.2' }}>
                 {usuario.nombre || usuario.numero_ambulancia}
               </p>
@@ -457,12 +439,12 @@ export default function CentrosPage() {
             borderRadius: '8px', padding: '0.45rem 0.9rem', color: C.red,
             fontSize: '0.82rem', cursor: 'pointer', fontWeight: '500',
           }}>
-            Cerrar sesión
+            Cerrar<span className="hide-xs"> sesión</span>
           </button>
         </div>
       </header>
 
-      <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <main className="app-main app-main--fab" style={{ maxWidth: '1200px' }}>
         {/* Encabezado */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
           flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -474,9 +456,6 @@ export default function CentrosPage() {
               {centrosFiltrados.length} de {centros.filter(c => !c.esOtro).length} centro(s) registrado(s)
             </p>
           </div>
-          <Btn variant="primary" size="md" onClick={() => setModalCentro({})}>
-            + Nuevo centro asistencial
-          </Btn>
         </div>
 
         {/* Buscador */}
@@ -486,7 +465,7 @@ export default function CentrosPage() {
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar por nombre, municipio o dirección..."
-            style={{ flex: 1, minWidth: '220px', padding: '0.55rem 0.9rem', borderRadius: '8px',
+            style={{ flex: 1, minWidth: 'min(100%, 220px)', padding: '0.55rem 0.9rem', borderRadius: '8px',
               border: `1px solid ${C.greenBorder}`, fontSize: '0.875rem', color: C.textDark,
               outline: 'none', backgroundColor: '#fff' }}
           />
@@ -518,7 +497,7 @@ export default function CentrosPage() {
             </div>
           ) : (
             <>
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-scroll">
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ backgroundColor: C.greenLight, borderBottom: `2px solid ${C.greenBorder}` }}>
@@ -608,6 +587,11 @@ export default function CentrosPage() {
             </>
           )}
         </div>
+
+        {/* Acción principal fija */}
+        <FloatingActionButton onClick={() => setModalCentro({})}>
+          + Nuevo centro asistencial
+        </FloatingActionButton>
       </main>
 
       {/* Modales */}

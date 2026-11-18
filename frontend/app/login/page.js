@@ -219,11 +219,11 @@ export default function LoginPage() {
       <div style={{
         position:       'relative',
         zIndex:         1,
-        minHeight:      '100vh',
+        minHeight:      '100dvh',
         display:        'flex',
         alignItems:     'center',
         justifyContent: 'center',
-        padding:        '1.5rem',
+        padding:        'max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left))',
         fontFamily:     'system-ui, -apple-system, sans-serif',
       }}>
         <div style={{ width: '100%', maxWidth: '420px' }}>
@@ -268,7 +268,7 @@ export default function LoginPage() {
             backgroundColor: C.cardBg,
             border:          `1px solid ${C.greenBorder}`,
             borderRadius:    '16px',
-            padding:         '2rem',
+            padding:         'clamp(1.25rem, 6vw, 2rem)',
             boxShadow:       C.cardShadow,
           }}>
             <h2 style={{

@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
+import Modal from '../_components/Modal';
+import ActionBar from '../_components/ActionBar';
+import FloatingActionButton from '../_components/FloatingActionButton';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -187,28 +190,7 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
   };
 
   return (
-    <div style={{
-      position:        'fixed',
-      inset:           0,
-      backgroundColor: 'rgba(26,46,37,0.45)',
-      backdropFilter:  'blur(4px)',
-      display:         'flex',
-      alignItems:      'center',
-      justifyContent:  'center',
-      zIndex:          50,
-      padding:         '1rem',
-    }}>
-      <div style={{
-        backgroundColor: C.cardBg,
-        border:          `1px solid ${C.greenBorder}`,
-        borderRadius:    '16px',
-        padding:         '2rem',
-        width:           '100%',
-        maxWidth:        '480px',
-        boxShadow:       '0 8px 40px rgba(45,134,83,0.15)',
-        maxHeight:       '90vh',
-        overflowY:       'auto',
-      }}>
+    <Modal onClose={onCerrar} width="480px">
         <h2 style={{ color: C.textDark, fontWeight: '700', marginBottom: '1.5rem', fontSize: '1.1rem' }}>
           {esNuevo ? 'Nuevo usuario' : `Editar: ${usuario.nombre}`}
         </h2>
@@ -336,18 +318,17 @@ function ModalUsuario({ usuario, onGuardar, onCerrar }) {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+          <ActionBar>
+            <button type="button" onClick={onCerrar} style={btnSecondary}>
+              Cancelar
+            </button>
             <button type="submit" disabled={cargando}
               style={{ ...btnPrimary, opacity: cargando ? 0.65 : 1 }}>
               {cargando ? 'Guardando...' : 'Guardar'}
             </button>
-            <button type="button" onClick={onCerrar} style={btnSecondary}>
-              Cancelar
-            </button>
-          </div>
+          </ActionBar>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -405,20 +386,9 @@ export default function UsuariosPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.bg }}>
+    <div className="page-shell">
       {/* Navbar */}
-      <header style={{
-        backgroundColor: C.cardBg,
-        borderBottom:    `1px solid ${C.navBorder}`,
-        padding:         '0.9rem 2rem',
-        display:         'flex',
-        alignItems:      'center',
-        justifyContent:  'space-between',
-        position:        'sticky',
-        top:             0,
-        zIndex:          10,
-        boxShadow:       '0 1px 4px rgba(45,134,83,0.07)',
-      }}>
+      <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <Link href="/dashboard" style={{ color: C.textMid, textDecoration: 'none', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
             ← Regresar
@@ -434,7 +404,7 @@ export default function UsuariosPage() {
             }}>
               <EcgIcon />
             </div>
-            <span style={{ fontWeight: '700', fontSize: '1rem', color: C.textDark }}>
+            <span className="app-header__title" style={{ fontWeight: '700', color: C.textDark }}>
               Gestión de Usuarios
             </span>
           </div>
@@ -443,11 +413,11 @@ export default function UsuariosPage() {
           style={btnDanger}
           onMouseEnter={(e) => { e.target.style.backgroundColor = '#fce4e1'; }}
           onMouseLeave={(e) => { e.target.style.backgroundColor = C.errorBg; }}>
-          Cerrar sesión
+          Cerrar<span className="hide-xs"> sesión</span>
         </button>
       </header>
 
-      <main style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
+      <main className="app-main app-main--fab" style={{ maxWidth: '1100px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1 style={{ fontSize: '1.4rem', fontWeight: '700', color: C.textDark, marginBottom: '0.2rem' }}>
@@ -457,12 +427,6 @@ export default function UsuariosPage() {
               {usuarios.length} usuario(s) registrados
             </p>
           </div>
-          <button onClick={() => setModalUsuario({})}
-            style={btnPrimary}
-            onMouseEnter={(e) => { e.target.style.backgroundColor = C.greenMid; }}
-            onMouseLeave={(e) => { e.target.style.backgroundColor = C.green; }}>
-            + Nuevo usuario
-          </button>
         </div>
 
         {error && (
@@ -479,6 +443,7 @@ export default function UsuariosPage() {
             <div style={{ padding: '3rem', textAlign: 'center', color: C.textLight }}>No hay usuarios registrados</div>
           ) : (
             <>
+            <div className="table-scroll">
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: C.greenLight, borderBottom: `1px solid ${C.greenBorder}` }}>
@@ -540,7 +505,7 @@ export default function UsuariosPage() {
                       </span>
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <button onClick={() => setModalUsuario(u)} style={btnSecondary}>Editar</button>
                         {u.activo && (
                           <button onClick={() => desactivarUsuario(u.id)} style={btnDanger}>Desactivar</button>
@@ -551,6 +516,7 @@ export default function UsuariosPage() {
                 ))}
               </tbody>
             </table>
+            </div>
             {visibleCount < usuarios.length && (
               <div style={{ padding: '1rem 1.5rem', textAlign: 'center', borderTop: `1px solid ${C.greenBorder}` }}>
                 <button
@@ -564,6 +530,11 @@ export default function UsuariosPage() {
             </>
           )}
         </div>
+
+        {/* Acción principal fija */}
+        <FloatingActionButton onClick={() => setModalUsuario({})}>
+          + Nuevo usuario
+        </FloatingActionButton>
       </main>
 
       {/* Modal crear/editar */}

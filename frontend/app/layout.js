@@ -5,6 +5,17 @@ export const metadata = {
   description: "Sistema de inventario médico",
 };
 
+// viewport-fit=cover: permite usar safe-area-inset (iPhone con notch).
+// interactive-widget=resizes-content: el teclado virtual reduce el viewport, así
+// las barras fijas quedan encima del teclado en vez de quedar tapadas.
+// No se limita el zoom (accesibilidad).
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="es" className="h-full">

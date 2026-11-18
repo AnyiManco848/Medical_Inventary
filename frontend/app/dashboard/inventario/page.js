@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import axios from 'axios';
 import Link from 'next/link';
+import Modal from '../_components/Modal';
+import ActionBar from '../_components/ActionBar';
+import FloatingActionButton from '../_components/FloatingActionButton';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -79,12 +82,7 @@ const EcgIcon = () => (
 /* ── Navbar ───────────────────────────────────────────────────────────────── */
 function Navbar({ usuario, onCerrarSesion }) {
   return (
-    <header style={{
-      backgroundColor: C.cardBg, borderBottom: `1px solid ${C.navBorder}`,
-      padding: '0.9rem 2rem', display: 'flex', alignItems: 'center',
-      justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100,
-      boxShadow: '0 1px 4px rgba(45,134,83,0.07)',
-    }}>
+    <header className="app-header">
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <Link href="/dashboard" style={{ color: C.textMid, textDecoration: 'none', fontSize: '0.875rem' }}>
           ← Dashboard
@@ -96,14 +94,14 @@ function Navbar({ usuario, onCerrarSesion }) {
             border: `1px solid ${C.greenBorder}`, borderRadius: '8px' }}>
             <EcgIcon />
           </div>
-          <span style={{ fontWeight: '700', fontSize: '1rem', color: C.textDark }}>
+          <span className="app-header__title" style={{ fontWeight: '700', color: C.textDark }}>
             Medical<span style={{ color: C.green }}>Inventary</span>
           </span>
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         {usuario && (
-          <div style={{ textAlign: 'right' }}>
+          <div className="app-header__user" style={{ textAlign: 'right' }}>
             <p style={{ fontSize: '0.85rem', color: C.textDark, fontWeight: '600', lineHeight: '1.2' }}>
               {usuario.nombre || usuario.numero_ambulancia}
             </p>
@@ -117,7 +115,7 @@ function Navbar({ usuario, onCerrarSesion }) {
           borderRadius: '8px', padding: '0.45rem 0.9rem', color: C.red,
           fontSize: '0.82rem', cursor: 'pointer', fontWeight: '500',
         }}>
-          Cerrar sesión
+          Cerrar<span className="hide-xs"> sesión</span>
         </button>
       </div>
     </header>
@@ -161,22 +159,6 @@ function Btn({ children, onClick, variant = 'primary', size = 'sm', disabled = f
 }
 
 /* ── Modal overlay ────────────────────────────────────────────────────────── */
-function Modal({ children, onClose, width = '520px' }) {
-  return (
-    <div onClick={onClose} style={{
-      position: 'fixed', inset: 0, backgroundColor: 'rgba(26,46,37,0.45)',
-      backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex',
-      alignItems: 'center', justifyContent: 'center', padding: '1rem',
-    }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        backgroundColor: C.cardBg, borderRadius: '16px', padding: '2rem',
-        width: '100%', maxWidth: width, maxHeight: '90vh', overflowY: 'auto',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
-      }}>{children}</div>
-    </div>
-  );
-}
-
 /* ── Campo de formulario ──────────────────────────────────────────────────── */
 function Campo({ label, children, error }) {
   return (
@@ -322,12 +304,12 @@ function ModalCrear({ token, ambulancias, onClose, onSaved }) {
 
       {error && <p style={{ color: C.red, fontSize: '0.82rem', marginBottom: '1rem' }}>{error}</p>}
 
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+      <ActionBar>
         <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
         <Btn variant="primary" onClick={guardar} disabled={enviando}>
           {enviando ? 'Creando...' : cantidad > 1 ? `Crear ${cantidad} unidades` : 'Crear insumo'}
         </Btn>
-      </div>
+      </ActionBar>
     </Modal>
   );
 }
@@ -394,12 +376,12 @@ function ModalEditar({ insumo, token, ambulancias, onClose, onSaved }) {
 
       {error && <p style={{ color: C.red, fontSize: '0.82rem', marginBottom: '1rem' }}>{error}</p>}
 
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+      <ActionBar>
         <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
         <Btn variant="primary" onClick={guardar} disabled={enviando}>
           {enviando ? 'Guardando...' : 'Guardar cambios'}
         </Btn>
-      </div>
+      </ActionBar>
     </Modal>
   );
 }
@@ -473,12 +455,12 @@ function ModalBaja({ insumo, token, onClose, onSaved }) {
 
       {error && <p style={{ color: C.red, fontSize: '0.82rem', marginBottom: '1rem' }}>{error}</p>}
 
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+      <ActionBar>
         <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
         <Btn variant="danger" onClick={confirmar} disabled={enviando}>
           {enviando ? 'Procesando...' : 'Confirmar baja'}
         </Btn>
-      </div>
+      </ActionBar>
     </Modal>
   );
 }
@@ -577,12 +559,12 @@ function ModalReasignar({ insumo, token, ambulancias, onClose, onSaved }) {
 
       {error && <p style={{ color: C.red, fontSize: '0.82rem', marginBottom: '1rem' }}>{error}</p>}
 
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+      <ActionBar>
         <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
         <Btn variant="primary" onClick={confirmar} disabled={enviando}>
           {enviando ? 'Reasignando...' : 'Confirmar reasignación'}
         </Btn>
-      </div>
+      </ActionBar>
     </Modal>
   );
 }
@@ -659,11 +641,11 @@ function ModalQR({ insumo, token, onClose }) {
         </p>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+      <ActionBar>
         <Btn variant="ghost" onClick={onClose}>Cerrar</Btn>
         <Btn variant="secondary" onClick={imprimir}>🖨 Imprimir</Btn>
         <Btn variant="primary" onClick={descargar} disabled={!qrUrl}>⬇ Descargar QR</Btn>
-      </div>
+      </ActionBar>
 
       {/* CSS de impresión: visibility permite mostrar el card aunque el resto sea invisible */}
       <style>{`
@@ -785,7 +767,7 @@ function ModalBuscar({ token, onClose, onEncontrado }) {
       )}
 
       {modo === 'manual' && (
-        <div>
+        <>
           <Campo label="Código del insumo" error={errorMsg}>
             <Input value={codigo} onChange={e => setCodigo(e.target.value)}
               placeholder="INS-COL-001" />
@@ -793,11 +775,11 @@ function ModalBuscar({ token, onClose, onEncontrado }) {
           <p style={{ fontSize: '0.75rem', color: C.textLight, marginBottom: '1rem' }}>
             Formato: INS-FAM-### (ej: INS-COL-001, INS-VEN-042)
           </p>
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+          <ActionBar>
             <Btn variant="ghost" onClick={() => setModo('inicio')}>Volver</Btn>
             <Btn variant="primary" onClick={() => buscar(codigo)}>Buscar insumo</Btn>
-          </div>
-        </div>
+          </ActionBar>
+        </>
       )}
 
       {modo === 'buscando' && (
@@ -844,7 +826,7 @@ function ModalResultadoBusqueda({ insumo: ini, token, ambulancias, onClose, onRe
         Insumo encontrado
       </h2>
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
+        <div style={{ flex: 1, minWidth: 'min(100%, 200px)' }}>
           <p style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: C.green, fontWeight: '700', marginBottom: '0.25rem' }}>
             {insumo.codigo || `#${insumo.id}`}
           </p>
@@ -909,7 +891,7 @@ function ModalHistorialBajas({ token, onClose }) {
       )}
 
       {!cargando && bajas.length > 0 && (
-        <div style={{ overflowX: 'auto' }}>
+        <div className="table-scroll">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
             <thead>
               <tr style={{ backgroundColor: C.redLight, borderBottom: `2px solid ${C.redBorder}` }}>
@@ -954,9 +936,9 @@ function ModalHistorialBajas({ token, onClose }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+      <ActionBar>
         <Btn variant="ghost" onClick={onClose}>Cerrar</Btn>
-      </div>
+      </ActionBar>
     </Modal>
   );
 }
@@ -1065,7 +1047,7 @@ export default function InventarioPage() {
 
   if (!usuario) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: C.bg, display: 'flex',
+      <div style={{ minHeight: '100dvh', backgroundColor: C.bg, display: 'flex',
         alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: C.textMid }}>Cargando...</p>
       </div>
@@ -1073,10 +1055,10 @@ export default function InventarioPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.bg }}>
+    <div className="page-shell">
       <Navbar usuario={usuario} onCerrarSesion={cerrarSesion} />
 
-      <main style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
+      <main className="app-main app-main--fab" style={{ maxWidth: '1400px' }}>
 
         {/* ── Encabezado ───────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
@@ -1096,11 +1078,6 @@ export default function InventarioPage() {
             <Btn variant="secondary" onClick={() => setModalBuscar(true)} size="md">
               🔍 Buscar por código
             </Btn>
-            {usuario.rol === 'admin' && (
-              <Btn variant="primary" onClick={() => setModalCrear(true)} size="md">
-                + Nuevo insumo
-              </Btn>
-            )}
           </div>
         </div>
 
@@ -1113,7 +1090,7 @@ export default function InventarioPage() {
           <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar por nombre, código o especificación..."
             style={{
-              flex: '1', minWidth: '220px', padding: '0.55rem 0.9rem', borderRadius: '8px',
+              flex: '1', minWidth: 'min(100%, 220px)', padding: '0.55rem 0.9rem', borderRadius: '8px',
               border: `1px solid ${C.greenBorder}`, fontSize: '0.875rem',
               color: C.textDark, outline: 'none', backgroundColor: '#fff',
             }} />
@@ -1165,7 +1142,7 @@ export default function InventarioPage() {
             </div>
           ) : (
             <>
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-scroll">
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ backgroundColor: C.greenLight, borderBottom: `2px solid ${C.greenBorder}` }}>
@@ -1291,6 +1268,13 @@ export default function InventarioPage() {
             </>
           )}
         </div>
+
+        {/* Acción principal fija */}
+        {usuario.rol === 'admin' && (
+          <FloatingActionButton onClick={() => setModalCrear(true)}>
+            + Nuevo insumo
+          </FloatingActionButton>
+        )}
       </main>
 
       {/* ── Modales ──────────────────────────────────────────────────────────── */}

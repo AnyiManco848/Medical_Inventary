@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Tokens
+   Breakpoints (mobile-first, los de Tailwind). Las media queries no aceptan
+   var(), así que se documentan aquí y se usan literalmente abajo:
+     xs  < 480px   (soporta desde 280px)
+     sm  ≥ 640px   tablas como tabla, modal centrado, formularios a 2 columnas
+     md  ≥ 768px
+     lg  ≥ 1024px
+     xl  ≥ 1280px
+   ────────────────────────────────────────────────────────────────────────── */
 :root {
   --bg-primary:    #f0f5f2;
   --bg-card:       #ffffff;
@@ -8,14 +18,357 @@
   --accent-teal:   #2d7da8;
   --text-primary:  #1a2e25;
   --text-muted:    #4a6a57;
-}
 
-* {
-  box-sizing: border-box;
+  /* Capas (de abajo hacia arriba) */
+  --z-action-bar:  5;
+  --z-fab:         90;
+  --z-header:      100;
+  --z-modal:       200;
+
+  --tap-size:      44px;      /* área táctil mínima */
+  --card-pad:      1rem;      /* relleno de tarjetas / modales / formularios */
+
+  --safe-top:      env(safe-area-inset-top, 0px);
+  --safe-right:    env(safe-area-inset-right, 0px);
+  --safe-bottom:   env(safe-area-inset-bottom, 0px);
+  --safe-left:     env(safe-area-inset-left, 0px);
+}
+@media (min-width: 640px)  { :root { --card-pad: 1.5rem; } }
+@media (min-width: 1024px) { :root { --card-pad: 2rem; } }
+
+* { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-bottom: 6rem;   /* un input enfocado no queda bajo la barra fija */
 }
 
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: Inter, system-ui, -apple-system, sans-serif;
+  overflow-wrap: break-word;
+}
+
+img, video, canvas { max-width: 100%; height: auto; }
+input, select, textarea { max-width: 100%; }
+
+/* ── Estructura de página ─────────────────────────────────────────────── */
+.page-shell {
+  min-height: 100vh;   /* respaldo */
+  min-height: 100dvh;  /* descuenta la barra del navegador móvil */
+  background-color: var(--bg-primary);
+}
+
+.app-main {
+  width: 100%;
+  margin-inline: auto;
+  padding: 1rem max(0.75rem, var(--safe-right)) 1rem max(0.75rem, var(--safe-left));
+}
+@media (min-width: 640px) {
+  .app-main { padding: 1.5rem max(1.5rem, var(--safe-right)) 1.5rem max(1.5rem, var(--safe-left)); }
+}
+@media (min-width: 1024px) {
+  .app-main { padding: 2rem; }
+}
+/* Espacio para que el botón flotante no tape el último contenido */
+.app-main--fab { padding-bottom: calc(5.5rem + var(--safe-bottom)); }
+
+/* ── Header sticky ────────────────────────────────────────────────────── */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+  background-color: #fff;
+  border-bottom: 1px solid #d5e8dc;
+  box-shadow: 0 1px 4px rgba(45, 134, 83, 0.07);
+  padding: calc(0.4rem + var(--safe-top)) max(0.6rem, var(--safe-right)) 0.4rem max(0.6rem, var(--safe-left));
+}
+@media (min-width: 640px) {
+  .app-header {
+    gap: 1rem;
+    padding: calc(0.75rem + var(--safe-top)) max(1.5rem, var(--safe-right)) 0.75rem max(1.5rem, var(--safe-left));
+  }
+}
+@media (min-width: 1024px) { .app-header { padding-inline: 2rem; } }
+
+/* Hijos flex con min-width:0 para que el título pueda encogerse con elipsis */
+.app-header > div { min-width: 0; }
+.app-header > div:first-child { flex: 1 1 0; display: flex; align-items: center; }
+.app-header > div:first-child > div { min-width: 0; flex: 0 1 auto; }
+.app-header > div:last-child { flex: 0 0 auto; }
+.app-header a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-size);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.app-header__title {
+  display: block;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: clamp(0.82rem, 3.6vw, 1rem);
+}
+.app-header__user { display: none; max-width: 14rem; }
+.app-header__user p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 560px) { .app-header__user { display: block; } }
+
+/* Pantallas pequeñas: sin icono ni separador; "Cerrar sesión" siempre visible */
+@media (max-width: 479.98px) {
+  .app-header > div:first-child > span { display: none !important; }
+  /* !important: el icono tiene display en línea */
+  .app-header > div:first-child > div > div:first-child { display: none !important; }
+  .app-header > div:last-child button {
+    padding-inline: 0.6rem !important;
+    font-size: 0.78rem !important;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 359.98px) {
+  .hide-xs { display: none; }      /* "Cerrar sesión" → "Cerrar" */
+}
+
+/* ── Tablas ───────────────────────────────────────────────────────────── */
+/* ≥ 640px: tabla normal con scroll horizontal contenido dentro de su caja */
+.table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+@media (min-width: 640px) {
+  .table-scroll > table { min-width: 36rem; }
+  .table-scroll th, .table-scroll td { overflow-wrap: normal; word-break: normal; }
+  .table-scroll td { min-width: 5.5rem; }
+}
+
+/* < 640px: cada fila es una tarjeta. TableLabels rellena data-label desde <th> */
+@media (max-width: 639.98px) {
+  .table-scroll { overflow: visible; }
+  .table-scroll table,
+  .table-scroll tbody { display: block; width: 100%; min-width: 0; }
+  .table-scroll thead {            /* oculto visualmente, accesible para lectores */
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .table-scroll tr {
+    display: block;
+    width: auto;
+    margin: 0.6rem;
+    padding: 0.35rem 0;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .table-scroll td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: auto;
+    max-width: none !important;
+    padding: 0.45rem 0.85rem !important;
+    border: 0 !important;
+    text-align: right !important;
+    overflow-wrap: anywhere;
+  }
+  .table-scroll td::before {
+    content: attr(data-label);
+    flex: 0 1 auto;
+    max-width: 50%;
+    overflow-wrap: normal;
+    word-break: normal;
+    text-align: left;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  /* Última celda = acciones: botones debajo, sin etiqueta */
+  .table-scroll td:last-child {
+    display: block;
+    text-align: left !important;
+    margin-top: 0.25rem;
+    padding-top: 0.6rem !important;
+    border-top: 1px dashed var(--border-color) !important;
+  }
+  .table-scroll td:last-child::before { content: none; }
+  .table-scroll td:last-child > div { justify-content: flex-start; }
+  /* Fila de estado vacío (colSpan): sin etiqueta */
+  .table-scroll td[colspan]::before { content: none; }
+}
+
+/* ── Formularios ──────────────────────────────────────────────────────── */
+.form-card { padding: var(--card-pad); }
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .form-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem;
+}
+@media (min-width: 1024px) { .cards-grid { gap: 1.25rem; } }
+/* Los items de la cuadrícula pueden encogerse (si no, min-width:auto desborda a 280px) */
+.cards-grid > * { min-width: 0; }
+.cards-grid button { min-width: 0 !important; padding: clamp(1rem, 5vw, 1.75rem) !important; }
+
+/* ── Barra de acciones fija (formularios y modales) ───────────────────── */
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-action-bar);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  align-items: center;
+  background-color: #fff;
+  border-top: 1px solid var(--border-color);
+  box-shadow: 0 -4px 14px rgba(26, 46, 37, 0.08);
+  /* Llega hasta los bordes de la tarjeta / modal */
+  margin: 1.5rem calc(var(--card-pad) * -1) calc(var(--card-pad) * -1);
+  padding: 0.75rem var(--card-pad) calc(0.75rem + var(--safe-bottom));
+}
+.action-bar--start { justify-content: flex-start; }
+.action-bar > button { min-height: var(--tap-size); }
+@media (max-width: 479.98px) {
+  .action-bar > * { flex: 1 1 7rem; }
+}
+.form-card > form > .action-bar:last-child,
+.form-card > .action-bar:last-child { border-radius: 0 0 16px 16px; }
+
+/* ── Botón flotante de acción principal (listados) ────────────────────── */
+.fab {
+  position: fixed;
+  z-index: var(--z-fab);
+  right: max(0.75rem, var(--safe-right));
+  bottom: max(0.75rem, var(--safe-bottom));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  max-width: calc(100% - 1.5rem);
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--accent-green);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(45, 134, 83, 0.4), 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.15s, transform 0.15s;
+}
+.fab:hover  { background-color: #4a9e6e; transform: translateY(-1px); }
+.fab:focus-visible { outline: 3px solid rgba(45, 134, 83, 0.4); outline-offset: 2px; }
+
+/* ── Modales: pantalla completa en móvil, diálogo centrado desde 640px ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background-color: rgba(26, 46, 37, 0.45);
+  backdrop-filter: blur(4px);
+}
+.modal-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-bottom: 6rem;
+  background-color: #fff;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  padding: calc(var(--card-pad) + var(--safe-top))
+           calc(var(--card-pad) + var(--safe-right))
+           var(--card-pad)
+           calc(var(--card-pad) + var(--safe-left));
+}
+/* Pantalla completa: la barra se ancla al fondo aunque el contenido sea corto */
+.modal-panel > form { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
+.modal-panel .action-bar { margin-top: auto; }
+.modal-panel > * { min-width: 0; }
+
+@media (min-width: 640px) {
+  .modal-overlay { align-items: center; padding: 1rem; }
+  .modal-panel {
+    display: block;
+    max-width: var(--modal-w, 520px);
+    height: auto;
+    max-height: calc(100dvh - 2rem);
+    padding: var(--card-pad);
+    border-radius: 16px;
+  }
+  .modal-panel > form { display: block; }
+  .modal-panel .action-bar { margin-top: 1.5rem; }
+}
+
+/* Encabezado de modal que permanece visible (botón Cerrar siempre a mano) */
+.modal-sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-action-bar);
+  background-color: #fff;
+  border-bottom: 1px solid var(--border-color);
+  margin: calc((var(--card-pad) + var(--safe-top)) * -1) calc(var(--card-pad) * -1) 1rem;
+  padding: calc(var(--card-pad) + var(--safe-top)) var(--card-pad) 0.75rem;
+}
+@media (min-width: 640px) {
+  .modal-sticky-head {
+    margin-top: calc(var(--card-pad) * -1);
+    padding-top: var(--card-pad);
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+/* ── Áreas táctiles ≥ 44px y sin zoom automático en iOS ───────────────── */
+@media (max-width: 767.98px), (pointer: coarse) {
+  button:not(.tap-expand),
+  select,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+    min-height: var(--tap-size);
+  }
+  button:not(.tap-expand) { min-width: var(--tap-size); }
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;   /* evita el zoom al enfocar en iOS */
+  }
+  label:has(> input[type="checkbox"]),
+  label:has(> input[type="radio"]) { min-height: var(--tap-size); }
+}
+/* Botones pequeños (p. ej. quitar foto): área táctil ampliada sin crecer visualmente */
+.tap-expand { position: relative; }
+.tap-expand::after { content: ''; position: absolute; inset: -12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

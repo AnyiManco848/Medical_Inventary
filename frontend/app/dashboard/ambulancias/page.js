@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
+import Modal from '../_components/Modal';
+import ActionBar from '../_components/ActionBar';
+import FloatingActionButton from '../_components/FloatingActionButton';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -66,22 +69,6 @@ function Btn({ children, onClick, variant = 'primary', size = 'sm', disabled = f
       fontWeight:      '600', cursor: disabled ? 'not-allowed' : 'pointer',
       transition:      'opacity 0.15s', ...extra,
     }}>{children}</button>
-  );
-}
-
-function Modal({ children, onClose, width = '480px' }) {
-  return (
-    <div onClick={onClose} style={{
-      position: 'fixed', inset: 0, backgroundColor: 'rgba(26,46,37,0.45)',
-      backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex',
-      alignItems: 'center', justifyContent: 'center', padding: '1rem',
-    }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        backgroundColor: C.cardBg, borderRadius: '16px', padding: '2rem',
-        width: '100%', maxWidth: width, maxHeight: '90vh', overflowY: 'auto',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
-      }}>{children}</div>
-    </div>
   );
 }
 
@@ -149,7 +136,7 @@ function ModalAmbulancia({ ambulancia, token, onClose, onSaved }) {
   };
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} width="480px">
       <h2 style={{ fontSize: '1.15rem', fontWeight: '700', color: C.textDark, marginBottom: '1.5rem' }}>
         {esNuevo ? 'Nueva ambulancia' : `Editar: ${ambulancia.codigo}`}
       </h2>
@@ -189,12 +176,12 @@ function ModalAmbulancia({ ambulancia, token, onClose, onSaved }) {
           />
         </Campo>
 
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+        <ActionBar>
           <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
           <Btn variant="primary" type="submit" disabled={enviando}>
             {enviando ? 'Guardando...' : 'Guardar'}
           </Btn>
-        </div>
+        </ActionBar>
       </form>
     </Modal>
   );
@@ -294,7 +281,7 @@ export default function AmbulanciasPage() {
 
   if (!usuario) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: C.bg, display: 'flex',
+      <div style={{ minHeight: '100dvh', backgroundColor: C.bg, display: 'flex',
         alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: C.textMid }}>Cargando...</p>
       </div>
@@ -302,15 +289,10 @@ export default function AmbulanciasPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.bg }}>
+    <div className="page-shell">
 
       {/* ── Navbar ─────────────────────────────────────────────────────────── */}
-      <header style={{
-        backgroundColor: C.cardBg, borderBottom: `1px solid ${C.navBorder}`,
-        padding: '0.9rem 2rem', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100,
-        boxShadow: '0 1px 4px rgba(45,134,83,0.07)',
-      }}>
+      <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link href="/dashboard" style={{ color: C.textMid, textDecoration: 'none', fontSize: '0.875rem' }}>
             ← Dashboard
@@ -322,14 +304,14 @@ export default function AmbulanciasPage() {
               border: `1px solid ${C.tealBorder}`, borderRadius: '8px' }}>
               <EcgIcon />
             </div>
-            <span style={{ fontWeight: '700', fontSize: '1rem', color: C.textDark }}>
+            <span className="app-header__title" style={{ fontWeight: '700', color: C.textDark }}>
               Ambulancias
             </span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           {usuario && (
-            <div style={{ textAlign: 'right' }}>
+            <div className="app-header__user" style={{ textAlign: 'right' }}>
               <p style={{ fontSize: '0.85rem', color: C.textDark, fontWeight: '600', lineHeight: '1.2' }}>
                 {usuario.nombre || usuario.numero_ambulancia}
               </p>
@@ -343,12 +325,12 @@ export default function AmbulanciasPage() {
             borderRadius: '8px', padding: '0.45rem 0.9rem', color: C.red,
             fontSize: '0.82rem', cursor: 'pointer', fontWeight: '500',
           }}>
-            Cerrar sesión
+            Cerrar<span className="hide-xs"> sesión</span>
           </button>
         </div>
       </header>
 
-      <main style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
+      <main className="app-main app-main--fab" style={{ maxWidth: '1100px' }}>
 
         {/* ── Encabezado ───────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
@@ -361,9 +343,6 @@ export default function AmbulanciasPage() {
               {ambulanciasFiltradas.length} de {ambulancias.length} ambulancia(s) registrada(s)
             </p>
           </div>
-          <Btn variant="primary" size="md" onClick={() => setModalAmb({})}>
-            + Nueva ambulancia
-          </Btn>
         </div>
 
         {/* ── Filtros ──────────────────────────────────────────────────────── */}
@@ -373,7 +352,7 @@ export default function AmbulanciasPage() {
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar por código, placa o descripción..."
-            style={{ flex: 1, minWidth: '220px', padding: '0.55rem 0.9rem', borderRadius: '8px',
+            style={{ flex: 1, minWidth: 'min(100%, 220px)', padding: '0.55rem 0.9rem', borderRadius: '8px',
               border: `1px solid ${C.tealBorder}`, fontSize: '0.875rem', color: C.textDark,
               outline: 'none', backgroundColor: '#fff' }}
           />
@@ -421,7 +400,7 @@ export default function AmbulanciasPage() {
             </div>
           ) : (
             <>
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-scroll">
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ backgroundColor: C.greenLight, borderBottom: `2px solid ${C.greenBorder}` }}>
@@ -522,6 +501,11 @@ export default function AmbulanciasPage() {
             </>
           )}
         </div>
+
+        {/* Acción principal fija */}
+        <FloatingActionButton onClick={() => setModalAmb({})}>
+          + Nueva ambulancia
+        </FloatingActionButton>
       </main>
 
       {/* ── Modal crear / editar ──────────────────────────────────────────── */}

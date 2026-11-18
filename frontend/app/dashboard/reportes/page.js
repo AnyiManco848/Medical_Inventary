@@ -118,16 +118,16 @@ export default function ReportesAmbulanciaPage() {
 
   if (!usuario) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100dvh', backgroundColor: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: C.textMid }}>Cargando...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.bg, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className="page-shell" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* Header */}
-      <header style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.navBorder}`, padding: '0.9rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 1px 4px rgba(45,134,83,0.07)' }}>
+      <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link href="/dashboard" style={{ color: C.textMid, textDecoration: 'none', fontSize: '0.875rem' }}>← Dashboard</Link>
           <span style={{ color: C.greenBorder }}>|</span>
@@ -135,18 +135,18 @@ export default function ReportesAmbulanciaPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', backgroundColor: C.greenLight, border: `1px solid ${C.greenBorder}`, borderRadius: '8px' }}>
               <EcgIcon />
             </div>
-            <span style={{ fontWeight: '700', fontSize: '1rem', color: C.textDark }}>
+            <span className="app-header__title" style={{ fontWeight: '700', color: C.textDark }}>
               Medical<span style={{ color: C.green }}>Inventary</span>
             </span>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
+        <div className="app-header__user" style={{ textAlign: 'right' }}>
           <p style={{ fontSize: '0.85rem', color: C.textDark, fontWeight: '600', lineHeight: '1.2', margin: 0 }}>{usuario.nombre || usuario.numero_ambulancia}</p>
           <p style={{ fontSize: '0.72rem', color: C.green, textTransform: 'capitalize', fontWeight: '500', margin: 0 }}>{usuario.rol}</p>
         </div>
       </header>
 
-      <main style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
+      <main className="app-main" style={{ maxWidth: '1100px' }}>
         <h1 style={{ fontSize: '1.35rem', fontWeight: '700', color: C.textDark, marginBottom: '0.25rem' }}>Mis entregas</h1>
         <p style={{ color: C.textMid, fontSize: '0.875rem', marginBottom: '1.75rem' }}>
           Historial de insumos que has entregado y su estado actual de recuperación.
@@ -168,7 +168,7 @@ export default function ReportesAmbulanciaPage() {
               No tienes entregas registradas todavía.
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-scroll">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                 <thead>
                   <tr style={{ backgroundColor: C.greenLight, borderBottom: `2px solid ${C.greenBorder}` }}>

@@ -6,6 +6,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
 import InsumoSelector from '../_components/InsumoSelector';
+import ActionBar from '../_components/ActionBar';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -184,15 +185,15 @@ export default function RecogerPage() {
 
   if (!usuario) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100dvh', backgroundColor: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: C.textMid }}>Cargando...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.bg, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <header style={{ backgroundColor: C.cardBg, borderBottom: `1px solid ${C.navBorder}`, padding: '0.9rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 1px 4px rgba(45,134,83,0.07)' }}>
+    <div className="page-shell" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link href="/dashboard" style={{ color: C.textMid, textDecoration: 'none', fontSize: '0.875rem' }}>← Dashboard</Link>
           <span style={{ color: C.greenBorder }}>|</span>
@@ -200,18 +201,18 @@ export default function RecogerPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', backgroundColor: C.greenLight, border: `1px solid ${C.greenBorder}`, borderRadius: '8px' }}>
               <EcgIcon />
             </div>
-            <span style={{ fontWeight: '700', fontSize: '1rem', color: C.textDark }}>
+            <span className="app-header__title" style={{ fontWeight: '700', color: C.textDark }}>
               Medical<span style={{ color: C.green }}>Inventary</span>
             </span>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
+        <div className="app-header__user" style={{ textAlign: 'right' }}>
           <p style={{ fontSize: '0.85rem', color: C.textDark, fontWeight: '600', lineHeight: '1.2', margin: 0 }}>{usuario.nombre || usuario.numero_ambulancia}</p>
           <p style={{ fontSize: '0.72rem', color: C.green, textTransform: 'capitalize', fontWeight: '500', margin: 0 }}>{usuario.rol}</p>
         </div>
       </header>
 
-      <main style={{ padding: '2rem', maxWidth: '680px', margin: '0 auto' }}>
+      <main className="app-main" style={{ maxWidth: '680px' }}>
         <h1 style={{ fontSize: '1.35rem', fontWeight: '700', color: C.textDark, marginBottom: '0.25rem' }}>Recoger inventario</h1>
         <p style={{ color: C.textMid, fontSize: '0.875rem', marginBottom: '1.75rem' }}>Registra la recuperación de un insumo previamente entregado.</p>
 
@@ -234,7 +235,7 @@ export default function RecogerPage() {
           </div>
         )}
 
-        <div style={{ backgroundColor: C.cardBg, border: `1px solid ${C.greenBorder}`, borderRadius: '16px', padding: '2rem', boxShadow: C.cardShadow }}>
+        <div className="form-card" style={{ backgroundColor: C.cardBg, border: `1px solid ${C.greenBorder}`, borderRadius: '16px', boxShadow: C.cardShadow }}>
           <form onSubmit={handleSubmit}>
 
             {/* 1. Insumo */}
@@ -277,7 +278,7 @@ export default function RecogerPage() {
             )}
 
             {/* 5 & 6. Fecha y hora */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
               <div>
                 <label style={labelStyle}>Fecha</label>
                 <input type="date" name="fecha" value={form.fecha} onChange={handleChange} onFocus={onFocus} onBlur={onBlur} style={inputBase} />
@@ -318,7 +319,8 @@ export default function RecogerPage() {
               </div>
             )}
 
-            <button
+            <ActionBar>
+              <button
               type="submit"
               disabled={guardando}
               onMouseEnter={(e) => { if (!guardando) { e.target.style.backgroundColor = BTN.hover;  e.target.style.boxShadow = `0 4px 14px ${BTN.shadowHover}`; } }}
@@ -327,6 +329,7 @@ export default function RecogerPage() {
             >
               {guardando ? 'Guardando...' : 'Registrar recogida'}
             </button>
+            </ActionBar>
 
           </form>
         </div>

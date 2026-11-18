@@ -231,18 +231,18 @@ function TabHistorial({ token, ambulancias, centros }) {
             value={filtros.insumo}
             onChange={setF('insumo')}
             placeholder="Buscar insumo o código..."
-            style={{ flex: '1', minWidth: '200px', ...inputStyle }}
+            style={{ flex: '1', minWidth: 'min(100%, 200px)', ...inputStyle }}
             onKeyDown={e => e.key === 'Enter' && buscar()}
           />
           <select value={filtros.ambulanciaId} onChange={setF('ambulanciaId')}
-            style={{ ...inputStyle, cursor: 'pointer', minWidth: '160px' }}>
+            style={{ ...inputStyle, cursor: 'pointer', minWidth: 'min(100%, 160px)' }}>
             <option value="">Todas las ambulancias</option>
             {ambulancias.map(a => (
               <option key={a.id} value={a.id}>{a.codigo}{a.descripcion ? ` · ${a.descripcion}` : ''}</option>
             ))}
           </select>
           <select value={filtros.centroId} onChange={setF('centroId')}
-            style={{ ...inputStyle, cursor: 'pointer', minWidth: '180px' }}>
+            style={{ ...inputStyle, cursor: 'pointer', minWidth: 'min(100%, 180px)' }}>
             <option value="">Todos los centros</option>
             {centros.map(c => (
               <option key={c.id} value={c.id}>{c.nombre}</option>
@@ -299,7 +299,7 @@ function TabHistorial({ token, ambulancias, centros }) {
           </div>
         ) : (
           <>
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-scroll">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ backgroundColor: C.greenLight, borderBottom: `2px solid ${C.greenBorder}` }}>
@@ -446,7 +446,7 @@ function TabPendientes({ token, ambulancias }) {
         </p>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <select value={ambulanciaId} onChange={e => setAmbulanciaId(e.target.value)}
-            style={{ ...inputStyle, cursor: 'pointer', minWidth: '180px' }}>
+            style={{ ...inputStyle, cursor: 'pointer', minWidth: 'min(100%, 180px)' }}>
             <option value="">Todas las ambulancias</option>
             {ambulancias.map(a => (
               <option key={a.id} value={a.id}>{a.codigo}{a.descripcion ? ` · ${a.descripcion}` : ''}</option>
@@ -502,7 +502,7 @@ function TabPendientes({ token, ambulancias }) {
           </div>
         ) : (
           <>
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-scroll">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ backgroundColor: C.greenLight, borderBottom: `2px solid ${C.greenBorder}` }}>
@@ -609,7 +609,7 @@ export default function ReportesAdminPage() {
 
   if (!usuario) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: C.bg, display: 'flex',
+      <div style={{ minHeight: '100dvh', backgroundColor: C.bg, display: 'flex',
         alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: C.textMid }}>Cargando...</p>
       </div>
@@ -617,14 +617,9 @@ export default function ReportesAdminPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.bg }}>
+    <div className="page-shell">
       {/* Navbar */}
-      <header style={{
-        backgroundColor: C.cardBg, borderBottom: `1px solid ${C.navBorder}`,
-        padding: '0.9rem 2rem', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100,
-        boxShadow: '0 1px 4px rgba(45,134,83,0.07)',
-      }}>
+      <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link href="/dashboard" style={{ color: C.textMid, textDecoration: 'none', fontSize: '0.875rem' }}>
             ← Dashboard
@@ -636,14 +631,14 @@ export default function ReportesAdminPage() {
               border: `1px solid ${C.greenBorder}`, borderRadius: '8px' }}>
               <EcgIcon />
             </div>
-            <span style={{ fontWeight: '700', fontSize: '1rem', color: C.textDark }}>
+            <span className="app-header__title" style={{ fontWeight: '700', color: C.textDark }}>
               Medical<span style={{ color: C.green }}>Inventary</span>
             </span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           {usuario && (
-            <div style={{ textAlign: 'right' }}>
+            <div className="app-header__user" style={{ textAlign: 'right' }}>
               <p style={{ fontSize: '0.85rem', color: C.textDark, fontWeight: '600', lineHeight: '1.2' }}>
                 {usuario.nombre || usuario.numero_ambulancia}
               </p>
@@ -657,12 +652,12 @@ export default function ReportesAdminPage() {
             borderRadius: '8px', padding: '0.45rem 0.9rem', color: C.red,
             fontSize: '0.82rem', cursor: 'pointer', fontWeight: '500',
           }}>
-            Cerrar sesión
+            Cerrar<span className="hide-xs"> sesión</span>
           </button>
         </div>
       </header>
 
-      <main style={{ padding: '2rem', maxWidth: '1300px', margin: '0 auto' }}>
+      <main className="app-main" style={{ maxWidth: '1300px' }}>
         <div style={{ marginBottom: '1.75rem' }}>
           <h1 style={{ fontSize: '1.4rem', fontWeight: '700', color: C.textDark, marginBottom: '0.25rem' }}>
             Trazabilidad

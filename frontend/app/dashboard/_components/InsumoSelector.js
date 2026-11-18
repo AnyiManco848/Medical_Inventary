@@ -134,7 +134,14 @@ export default function InsumoSelector({ accentColor, accentLight, accentBorder,
       const scanner = new Html5Qrcode('qr-reader-selector');
       await scanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        {
+          fps: 10,
+          // El recuadro se adapta al ancho disponible (pantallas de 280px)
+          qrbox: (w, h) => {
+            const lado = Math.max(120, Math.min(250, Math.floor(Math.min(w, h) * 0.8)));
+            return { width: lado, height: lado };
+          },
+        },
         async (decoded) => {
           await scanner.stop().catch(() => {});
           escanerRef.current = null;
